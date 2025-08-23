@@ -1,9 +1,9 @@
 package app
 
 import (
+	"myapi/app/admin"
+	"myapi/app/api"
 	"myapi/app/config"
-	"myapi/app/controllers" // 导入控制器
-	"myapi/app/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,7 +11,11 @@ import (
 // SetupRouter 配置并返回路由引擎
 // 这是一个公开的函数，将在main.go中被调用
 func SetupRouter() *gin.Engine {
-	r := gin.Default()
+	// 使用gin.New()而不是gin.Default()，避免加载默认的日志中间件
+	r := gin.New()
+	// 仅添加Recovery中间件来处理panic
+	r.Use(gin.Recovery())
+
 	cnf := config.GetConfig()
 	// fmt.Println(cnf.AppName)
 
@@ -19,36 +23,15 @@ func SetupRouter() *gin.Engine {
 	// fmt.Printf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 	// 	dbcfg.User, dbcfg.Password, dbcfg.Host, dbcfg.Port, dbcfg.DBName)
 
-	// 定义API路由,这个需要验证路由
-	api := r.Group(cnf.AppName)
-	api.Use(middleware.AuthMiddleware())
-	{
-		// 用户相关路由
-		users := api.Group("/u")
-		{
-			users.GET("/", controllers.GetAllUsers) // GET /api/users
-			users.GET("/:id", controllers.GetUser)  // GET /api/users/123
-			users.POST("/", controllers.CreateUser) // POST /api/users
-		}
+	// 设置API路由
+	api.SetupAPIRoutes(r, cnf.AppName)
 
-		// 你可以在这里继续添加其他路由组，例如：
-		products := api.Group("/products")
-		{
-			products.GET("/", controllers.GetAllProducts)
-		}
-	}
-
-	public := r.Group(cnf.AppName)
-	{
-		// 定义一个健康检查路由
-		public.GET("/health", func(c *gin.Context) {
-			c.JSON(200, gin.H{"status": "OK"})
+	// 设置admin路由
+	admin.SetupAdminRouter(r, cnf.BackendAppName)
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": " hello world",
 		})
-		// 定义一个健康检查路由
-		public.GET("/ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{"status": "OK", "message": "pong"})
-		})
-
-	}
+	})
 	return r
 }

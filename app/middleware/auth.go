@@ -5,13 +5,16 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"myapi/app/logs"
 )
 
 // AuthMiddleware JWT认证中间件
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+
 		// 1. 从请求头中获取token
 		authHeader := c.GetHeader("Authorization")
+		logs.Debug("Authorization header:", authHeader, "11111")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,

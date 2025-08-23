@@ -11,12 +11,15 @@ import (
 
 // Config 全局配置结构体
 type Config struct {
-	AppName     string
-	Environment string // development, production, testing
-	ServerPort  string
-	JWTSecret   string
-	DebugMode   bool
-	DatabaseURL string
+	AppName        string
+	Environment    string // development, production, testing
+	ServerPort     string
+	JWTSecret      string
+	DebugMode      bool
+	DatabaseURL    string
+	BackendAppName string
+	AccessLogPath  string
+	DebugLogPath   string
 }
 
 var (
@@ -33,13 +36,16 @@ func Init() {
 
 		// 2. 初始化配置
 		config = &Config{
-			AppName:     getEnv("APP_NAME", "MyGinApp"),
-			Environment: getEnv("ENVIRONMENT", "development"),
-			ServerPort:  getEnv("SERVER_PORT", "8080"),
-			JWTSecret:   getEnv("JWT_SECRET", "your-default-secret-key-change-in-production"),
-			DebugMode:   getEnvAsBool("DEBUG_MODE", true),
-			DatabaseURL: getEnv("DATABASE_URL", "host=localhost user=postgres dbname=mydb sslmode=disable"),
-		}
+		AppName:        getEnv("APP_NAME", "MyGinApp"),
+		Environment:    getEnv("ENVIRONMENT", "development"),
+		ServerPort:     getEnv("SERVER_PORT", "8080"),
+		BackendAppName: getEnv("BackendAppName", "admin"),
+		JWTSecret:      getEnv("JWT_SECRET", "your-default-secret-key-change-in-production"),
+		DebugMode:      getEnvAsBool("DEBUG_MODE", true),
+		DatabaseURL:    getEnv("DATABASE_URL", "host=localhost user=postgres dbname=mydb sslmode=disable"),
+		AccessLogPath:  getEnv("ACCESS_LOG_PATH", "logs/access.log"),
+		DebugLogPath:   getEnv("DEBUG_LOG_PATH", "logs/debug.log"),
+	}
 
 		log.Printf("配置初始化完成: %s (%s)", config.AppName, config.Environment)
 	})
