@@ -39,5 +39,7 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		public.GET("/ping", func(c *gin.Context) {
 			c.JSON(200, gin.H{"status": "OK", "message": "pong"})
 		})
+		// 广告相关路由
+		public.GET("/ads", controllers.GetAllAds)
 	}
 }

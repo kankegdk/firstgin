@@ -6,6 +6,7 @@ import (
 	"myapi/app/api"
 	"myapi/app/config"
 	"myapi/app/logs"
+	"myapi/app/storage"
 	"os"
 	"os/signal"
 	"syscall"
@@ -34,6 +35,12 @@ func main() {
 	logger.RedirectStdoutStderr()
 
 	log.Println("正在启动服务器...")
+
+	// 初始化MySQL连接
+	if err := storage.InitMySQL(); err != nil {
+		log.Fatalf("初始化MySQL连接失败: %v", err)
+	}
+	defer storage.CloseMySQL()
 
 	// 创建路由引擎但不设置路由
 	router := gin.New()

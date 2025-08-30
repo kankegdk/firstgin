@@ -7,18 +7,20 @@ import (
 	"myapi/app/config"
 	"time"
 
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 	_ "github.com/go-sql-driver/mysql"
 )
 
 var MySQLDB *sql.DB
+var GormDB *gorm.DB
 
 // InitMySQL 初始化MySQL连接池
 func InitMySQL() error {
 	cfg := config.GetDatabaseConfig()
 
 	// 构建DSN (Data Source Name)
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
+	dsn := cfg.GetConnectionString()
 
 	// 打开数据库连接
 	db, err := sql.Open("mysql", dsn)
@@ -38,12 +40,28 @@ func InitMySQL() error {
 
 	MySQLDB = db
 	log.Println("MySQL连接池初始化成功")
+
+	// 初始化GORM
+	gormDB, err := gorm.Open(mysql.New(mysql.Config{Conn: db}), &gorm.Config{
+		SkipDefaultTransaction: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize GORM: %v", err)
+	}
+
+	GormDB = gormDB
+	log.Println("GORM初始化成功")
 	return nil
 }
 
 // GetMySQL 获取MySQL连接实例
 func GetMySQL() *sql.DB {
 	return MySQLDB
+}
+
+// GetGormDB 获取GORM连接实例
+func GetGormDB() *gorm.DB {
+	return GormDB
 }
 
 // CloseMySQL 关闭MySQL连接
