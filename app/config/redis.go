@@ -10,9 +10,10 @@ type RedisConfig struct {
 	Port         int
 	User         string
 	Password     string
-	DBName       string
+	DBName       int
 	PoolSize     int
 	MinIdleConns int
+	Prefix       string
 }
 
 func GetRedisConfig() *RedisConfig {
@@ -22,9 +23,10 @@ func GetRedisConfig() *RedisConfig {
 		Host:         getEnv("REDIS_HOST", "localhost"),
 		Port:         getEnvAsInt("REDIS_PORT", 6379),
 		Password:     getEnv("REDIS_PASSWORD", "postgres"),
-		DBName:       getEnv("REDIS_DB", ""),
+		DBName:       getEnvAsInt("REDIS_DB", 0),
 		PoolSize:     getEnvAsInt("REDIS_POOL_SIZE", 20),
 		MinIdleConns: getEnvAsInt("REDIS_MIN_IDLE_CONNS", 5),
+		Prefix:       getEnv("REDIS_PREFIX", "ims_"),
 	}
 }
 

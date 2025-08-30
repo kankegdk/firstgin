@@ -42,6 +42,12 @@ func main() {
 	}
 	defer storage.CloseMySQL()
 
+	// 初始化Redis连接
+	if err := storage.InitRedis(); err != nil {
+		log.Fatalf("初始化Redis连接失败: %v", err)
+	}
+	defer storage.CloseRedis()
+
 	// 创建路由引擎但不设置路由
 	router := gin.New()
 	router.Use(gin.Recovery())
