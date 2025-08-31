@@ -58,5 +58,10 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		})
 		// 广告相关路由
 		public.GET("/ads", controllers.GetAllAds)
+		
+		// 登录相关路由
+		public.POST("/login/password", controllers.LoginByPassword)
+		public.POST("/login/sms", controllers.LoginBySmsCode)
+		public.POST("/login/send-sms", controllers.SendSmsCode)
 	}
 }

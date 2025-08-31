@@ -1109,16 +1109,16 @@ func GetGoodsDeliveryModeArray(ids string) []map[string]interface{} {
 		return []map[string]interface{}{}
 	}
 
-	modes := GetGoodsDeliveryMode()
+	//modes := GetGoodsDeliveryMode()
 	idList := strings.Split(ids, ",")
 	result := make([]map[string]interface{}, 0, len(idList))
 
-	for _, id := range idList {
-		idInt, _ := strconv.Atoi(id)
-		if mode, exists := modes[idInt]; exists {
-			result = append(result, mode)
-		}
-	}
+	// for _, id := range idList {
+	// 	idInt, _ := strconv.Atoi(id)
+	// 	if mode, exists := modes[idInt]; exists {
+	// 		result = append(result, mode)
+	// 	}
+	// }
 
 	return result
 }
@@ -1303,6 +1303,14 @@ func SetPicsView(pics string) []map[string]interface{} {
 	}
 
 	return result
+}
+
+// 先不加逻辑
+func ToImg(url string) string {
+	if url == "" {
+		return ""
+	}
+	return url
 }
 
 // ScriptPath 获取脚本路径
