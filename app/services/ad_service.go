@@ -6,6 +6,7 @@ import (
 	"myapi/app/config"
 	"myapi/app/models"
 	"myapi/app/storage"
+	"myapi/app/structs"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -13,7 +14,7 @@ import (
 
 // AdService 广告服务接口
 type AdService interface {
-	GetAllAds(pageUrl string) []models.Ad
+	GetAllAds(pageUrl string) []structs.Ad
 }
 
 // adService 实现AdService接口的结构体
@@ -25,7 +26,7 @@ func NewAdService() AdService {
 }
 
 // GetAllAds 获取所有广告
-func (s *adService) GetAllAds(pageUrl string) []models.Ad {
+func (s *adService) GetAllAds(pageUrl string) []structs.Ad {
 	// 如果pageUrl有值，使用Redis缓存
 	if pageUrl != "" {
 		// 从配置中获取Redis前缀
@@ -40,7 +41,7 @@ func (s *adService) GetAllAds(pageUrl string) []models.Ad {
 			//这里加一个日志
 			log.Println("从Redis缓存中获取广告数据cacheKey", cacheKey)
 			// 缓存命中，解析JSON并返回
-			var ads []models.Ad
+			var ads []structs.Ad
 			if err2 := json.Unmarshal([]byte(cacheData), &ads); err2 == nil {
 				return ads
 			} else {
@@ -66,7 +67,7 @@ func (s *adService) GetAllAds(pageUrl string) []models.Ad {
 		return ads
 	}
 	// 等于空就去取数据库，直接返回空数组
-	return []models.Ad{}
+	return []structs.Ad{}
 	// 如果pageUrl为空，直接从数据库获取
 	//return models.GetAllAds(pageUrl)
 }
