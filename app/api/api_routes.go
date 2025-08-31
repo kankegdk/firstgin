@@ -13,6 +13,11 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 	api := r.Group(apiPrefix)
 	api.Use(middleware.AuthMiddleware())
 	{
+
+		api.GET("/", func(c *gin.Context) {
+			c.JSON(200, gin.H{"status": "OK"})
+		})
+
 		// 用户相关路由
 		users := api.Group("/u")
 		{
