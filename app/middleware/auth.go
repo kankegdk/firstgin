@@ -7,7 +7,6 @@ import (
 
 	"myapi/app/config"
 	"myapi/app/helper"
-	"myapi/app/logs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +17,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// 1. 从请求头中获取token
 		authHeader := c.GetHeader("Authorization")
-		logs.Debug("Authorization header:", authHeader)
+		log.Println("Authorization header:", authHeader)
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
@@ -47,7 +46,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 使用RSA公钥解析和验证JWT
 		claims, err := helper.ParseJWT(tokenString, publicKeyPath)
 		if err != nil {
-			logs.Debug("JWT验证失败:", err)
+			log.Println("JWT验证失败:", err)
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
 				"message": "无效的token",
