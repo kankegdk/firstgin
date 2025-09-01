@@ -1,10 +1,11 @@
 package services
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
+	"log"
 	"math/rand"
+	"myapi/app/config"
+	"myapi/app/helper"
 	"myapi/app/models"
 	"myapi/app/structs"
 	"time"
@@ -57,7 +58,7 @@ func (s *memberService) LoginByPassword(username, password string, clientIP stri
 		return nil, "", fmt.Errorf("更新登录信息失败: %v", err)
 	}
 
-	// 5. 生成JWT令牌（这里简化处理，实际应该使用JWT库）
+	// 5. 生成JWT
 	token := generateToken(member.ID)
 
 	return member, token, nil
@@ -121,19 +122,28 @@ func (s *memberService) SendSmsCode(telephone string) error {
 
 // VerifyPassword 验证密码
 func (s *memberService) VerifyPassword(inputPassword, storedPassword, salt string) bool {
-	// 根据用户提供的表结构，密码加密方式可能是md5或sha1加盐
-	// 这里假设是md5(password + salt)
-	hash := md5.Sum([]byte(inputPassword + salt))
-	// 实际项目中需要根据具体的加密方式调整
-	return hex.EncodeToString(hash[:]) == storedPassword
+	hash := helper.PassHash(inputPassword, salt)
+	return hash == storedPassword
 }
 
-// generateToken 生成令牌（简化实现）
+// generateToken 使用非对称加密的JWT库生成令牌
 func generateToken(userID int) string {
-	// 实际项目中应该使用JWT库生成令牌
-	// 这里简单生成一个模拟的token
-	timestamp := time.Now().Unix()
-	return fmt.Sprintf("%d:%d:%s", userID, timestamp, generateRandomString(16))
+	// 获取配置
+	cfg := config.GetConfig()
+	privateKeyPath := cfg.JWTPrivateKeyPath
+	// 设置令牌过期时间（24小时）
+	expirationTime := time.Hour * 24
+
+	// 使用RSA私钥生成JWT令牌
+	token, err := helper.GenerateJWT(userID, privateKeyPath, expirationTime)
+	if err != nil {
+		// 如果生成失败，使用默认的简单令牌作为备用方案
+		log.Printf("生成JWT令牌失败: %v\n", err)
+		timestamp := time.Now().Unix()
+		return fmt.Sprintf("%d:%d:%s", userID, timestamp, generateRandomString(16))
+	}
+
+	return token
 }
 
 // generateSmsCode 生成短信验证码

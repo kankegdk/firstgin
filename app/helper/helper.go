@@ -1,8 +1,11 @@
 package helper
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
 	"math/rand"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -1361,4 +1364,23 @@ func RemoveXSS(str string) string {
 // StrExists 检查字符串是否存在
 func StrExists(str string, find string) bool {
 	return strings.Contains(str, find)
+}
+
+// PassHash 对密码进行加密，类似于PHP中的pass_hash函数
+func PassHash(passwordInput, salt string) string {
+	// 从环境变量中读取AUTH_KEY，如果不存在则使用默认值
+	authKey := "" // 默认值，确保向后兼容
+	if value, exists := os.LookupEnv("AUTH_KEY"); exists {
+		authKey = value
+	}
+
+	// 拼接密码、盐值和authkey
+	combined := passwordInput + "-" + salt + "-" + authKey
+
+	// 计算SHA1哈希
+	sha1Hash := sha1.New()
+	sha1Hash.Write([]byte(combined))
+
+	// 将哈希结果转换为十六进制字符串
+	return hex.EncodeToString(sha1Hash.Sum(nil))
 }

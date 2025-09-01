@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"myapi/app/helper"
 	"myapi/app/services"
 	"net/http"
 	"strings"
@@ -31,7 +32,7 @@ func LoginByPassword(c *gin.Context) {
 	}
 
 	// 2. 获取客户端IP
-	clientIP := c.ClientIP()
+	clientIP := helper.GetRealIP(c)
 
 	// 3. 创建服务实例
 	memberService := services.NewMemberService()

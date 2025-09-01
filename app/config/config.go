@@ -12,15 +12,17 @@ import (
 
 // Config 全局配置结构体
 type Config struct {
-	AppName        string
-	Environment    string // development, production, testing
-	ServerPort     string
-	JWTSecret      string
-	DebugMode      bool
-	DatabaseURL    string
-	BackendAppName string
-	AccessLogPath  string
-	DebugLogPath   string
+	AppName           string
+	Environment       string // development, production, testing
+	ServerPort        string
+	JWTSecret         string
+	JWTPrivateKeyPath string // JWT私钥路径
+	JWTPublicKeyPath  string // JWT公钥路径
+	DebugMode         bool
+	DatabaseURL       string
+	BackendAppName    string
+	AccessLogPath     string
+	DebugLogPath      string
 }
 
 var (
@@ -59,15 +61,17 @@ func Init() {
 
 		// 2. 初始化配置
 		config = &Config{
-			AppName:        getEnv("APP_NAME", "MyGinApp"),
-			Environment:    getEnv("ENVIRONMENT", "development"),
-			ServerPort:     getEnv("SERVER_PORT", "8080"),
-			BackendAppName: getEnv("BackendAppName", "admin"),
-			JWTSecret:      getEnv("JWT_SECRET", "your-default-secret-key-change-in-production"),
-			DebugMode:      getEnvAsBool("DEBUG_MODE", true),
-			DatabaseURL:    getEnv("DATABASE_URL", "host=localhost user=postgres dbname=mydb sslmode=disable"),
-			AccessLogPath:  getEnv("ACCESS_LOG_PATH", "logs/access.log"),
-			DebugLogPath:   getEnv("DEBUG_LOG_PATH", "logs/debug.log"),
+			AppName:           getEnv("APP_NAME", "MyGinApp"),
+			Environment:       getEnv("ENVIRONMENT", "development"),
+			ServerPort:        getEnv("SERVER_PORT", "8080"),
+			BackendAppName:    getEnv("BackendAppName", "admin"),
+			JWTSecret:         getEnv("JWT_SECRET", "default_encryption_key"),
+			JWTPrivateKeyPath: getEnv("JWT_PRIVATE_KEY_PATH", "keys/jwt_private.pem"),
+			JWTPublicKeyPath:  getEnv("JWT_PUBLIC_KEY_PATH", "keys/jwt_public.pem"),
+			DebugMode:         getEnvAsBool("DEBUG_MODE", true),
+			DatabaseURL:       getEnv("DATABASE_URL", "host=localhost user=postgres dbname=mydb sslmode=disable"),
+			AccessLogPath:     getEnv("ACCESS_LOG_PATH", "logs/access.log"),
+			DebugLogPath:      getEnv("DEBUG_LOG_PATH", "logs/debug.log"),
 		}
 
 		log.Printf("配置初始化完成: %s (%s)", config.AppName, config.Environment)
