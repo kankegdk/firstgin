@@ -13,8 +13,8 @@ func AdminMiddleware() gin.HandlerFunc {
 		// 你可以根据实际情况修改这部分逻辑
 
 		// 例如，从上下文中获取用户ID
-		// userID, exists := c.Get("userID")
-		// if !exists {
+		// userID := helper.UID(c)
+		// if userID == 0 {
 		// 	c.JSON(http.StatusUnauthorized, gin.H{
 		// 		"error": "未认证",
 		// 	})

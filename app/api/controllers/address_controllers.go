@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
+	"myapi/app/helper"
 	"myapi/app/services"
 	"myapi/app/structs"
 
@@ -22,26 +24,17 @@ func AddAddress(c *gin.Context) {
 		return
 	}
 
-	// 3. 从上下文中获取用户信息（通常通过中间件设置）
-	// 这里假设用户ID和weid存储在上下文中
-	uid, exists := c.Get("uid")
-	if !exists {
+	// 从上下文中获取用户信息
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
+	weid := helper.Weid(c)
 
 	// 设置用户ID和weid
-	if uidInt, ok := uid.(int); ok {
-		address.Uid = uidInt
-	}
-	if weidInt, ok := weid.(int); ok {
-		address.Weid = weidInt
-	}
+	address.Uid = uid
+	address.Weid = weid
 
 	// 4. 调用服务层方法添加地址
 	addressId, err := addressService.AddAddress(address)
@@ -78,25 +71,17 @@ func UpdateAddress(c *gin.Context) {
 		return
 	}
 
-	// 4. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	// 从上下文中获取用户信息
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
+	weid := helper.Weid(c)
 
 	// 设置用户ID和weid
-	if uidInt, ok := uid.(int); ok {
-		address.Uid = uidInt
-	}
-	if weidInt, ok := weid.(int); ok {
-		address.Weid = weidInt
-	}
+	address.Uid = uid
+	address.Weid = weid
 
 	// 5. 调用服务层方法更新地址
 	if err := addressService.UpdateAddress(addressId, address); err != nil {
@@ -124,29 +109,15 @@ func DeleteAddress(c *gin.Context) {
 	}
 
 	// 3. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
-
-	// 转换类型
-	uidInt := 0
-	weidInt := 1
-	if uidIntVal, ok := uid.(int); ok {
-		uidInt = uidIntVal
-	}
-	if weidIntVal, ok := weid.(int); ok {
-		weidInt = weidIntVal
-	}
+	weid := helper.Weid(c)
 
 	// 4. 调用服务层方法删除地址
-	if err := addressService.DeleteAddress(addressId, weidInt, uidInt); err != nil {
+	if err := addressService.DeleteAddress(addressId, weid, uid); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -167,30 +138,15 @@ func SetDefaultAddress(c *gin.Context) {
 		return
 	}
 
-	// 3. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
-
-	// 转换类型
-	uidInt := 0
-	weidInt := 1
-	if uidIntVal, ok := uid.(int); ok {
-		uidInt = uidIntVal
-	}
-	if weidIntVal, ok := weid.(int); ok {
-		weidInt = weidIntVal
-	}
+	weid := helper.Weid(c)
 
 	// 4. 调用服务层方法设置默认地址
-	if err := addressService.SetDefaultAddress(addressId, weidInt, uidInt); err != nil {
+	if err := addressService.SetDefaultAddress(addressId, weid, uid); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -214,9 +170,8 @@ func GetAddressDetail(c *gin.Context) {
 		return
 	}
 
-	// 3. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
@@ -227,11 +182,8 @@ func GetAddressDetail(c *gin.Context) {
 	}
 
 	// 转换类型
-	uidInt := 0
+	uidInt := uid
 	weidInt := 1
-	if uidIntVal, ok := uid.(int); ok {
-		uidInt = uidIntVal
-	}
 	if weidIntVal, ok := weid.(int); ok {
 		weidInt = weidIntVal
 	}
@@ -252,30 +204,15 @@ func GetDefaultAddress(c *gin.Context) {
 	// 1. 创建服务实例
 	addressService := services.NewAddressService()
 
-	// 2. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
-
-	// 转换类型
-	uidInt := 0
-	weidInt := 1
-	if uidIntVal, ok := uid.(int); ok {
-		uidInt = uidIntVal
-	}
-	if weidIntVal, ok := weid.(int); ok {
-		weidInt = weidIntVal
-	}
+	weid := helper.Weid(c)
 
 	// 3. 调用服务层方法获取默认地址
-	address, err := addressService.GetDefaultAddress(weidInt, uidInt)
+	address, err := addressService.GetDefaultAddress(weid, uid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -295,30 +232,17 @@ func GetAddressList(c *gin.Context) {
 	// 1. 创建服务实例
 	addressService := services.NewAddressService()
 
-	// 2. 从上下文中获取用户信息
-	uid, exists := c.Get("uid")
-	if !exists {
+	uid := helper.UID(c)
+	if uid == 0 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
-
-	weid, weidExists := c.Get("weid")
-	if !weidExists {
-		weid = 1 // 默认值
-	}
-
-	// 转换类型
-	uidInt := 0
-	weidInt := 1
-	if uidIntVal, ok := uid.(int); ok {
-		uidInt = uidIntVal
-	}
-	if weidIntVal, ok := weid.(int); ok {
-		weidInt = weidIntVal
-	}
+	weid := helper.Weid(c)
+	log.Println("weid:", weid)
+	log.Println("uid:", uid)
 
 	// 3. 调用服务层方法获取地址列表
-	addresses, err := addressService.GetAddressList(weidInt, uidInt)
+	addresses, err := addressService.GetAddressList(weid, uid)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -59,7 +59,7 @@ func (s *adService) GetAllAds(pageUrl string) []structs.Ad {
 		ads := models.GetAllAds(pageUrl)
 
 		// 将结果存入缓存，过期时间设为24小时
-		if data, err := json.Marshal(ads); err == nil {
+		if data, err := json.Marshal(ads); err == nil && len(data) > 0 {
 			log.Println("将广告数据存入Redis缓存cacheKey", cacheKey)
 			storage.SetCache(cacheKey, string(data), time.Hour*24)
 		}

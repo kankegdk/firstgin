@@ -21,9 +21,9 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		// 用户相关路由
 		users := api.Group("/u")
 		{
-			users.GET("/", controllers.GetAllUsers) // GET /api/users
-			users.GET("/:id", controllers.GetUser)  // GET /api/users/123
-			users.POST("/", controllers.CreateUser) // POST /api/users
+			users.GET("/", controllers.GetAllUsers)    // GET /api/users
+			users.GET("/getuser", controllers.GetUser) // GET /api/users/123
+			users.POST("/", controllers.CreateUser)    // POST /api/users
 		}
 
 		// 产品相关路由
@@ -58,7 +58,7 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		})
 		// 广告相关路由
 		public.GET("/ads", controllers.GetAllAds)
-		
+
 		// 登录相关路由
 		public.POST("/login/password", controllers.LoginByPassword)
 		public.POST("/login/sms", controllers.LoginBySmsCode)

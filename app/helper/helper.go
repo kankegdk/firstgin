@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"log"
 	"math/rand"
 	"os"
 	"regexp"
@@ -13,6 +14,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+func UID(c *gin.Context) int {
+	uid, exists := c.Get("userID")
+	if !exists {
+		return 0
+	}
+	if uidInt, ok := uid.(int); ok {
+		return uidInt
+	}
+	return 0
+}
 
 // Only 从请求中获取指定的字段，类似于PHP中的only方法
 func Only(c *gin.Context, fields string) map[string]interface{} {
@@ -43,43 +55,41 @@ func Only(c *gin.Context, fields string) map[string]interface{} {
 // Weid 获取微信公众号ID，适配Gin框架的实现
 func Weid(c *gin.Context) int {
 	// 尝试从不同的地方获取weid
-	weid := 0
-
-	// 从GET参数中获取i或uniacid
-	if i := c.Query("i"); i != "" {
-		if val, err := strconv.Atoi(i); err == nil {
-			weid = val
-		}
+	weid, exists := c.Get("weid")
+	log.Println("helper weid:", weid)
+	if !exists {
+		return 0
 	}
-
-	// 如果没有获取到，尝试从POST参数中获取
-	if weid == 0 {
-		if i := c.PostForm("i"); i != "" {
-			if val, err := strconv.Atoi(i); err == nil {
-				weid = val
-			}
-		}
+	// 尝试直接转换为int
+	if weidInt, ok := weid.(int); ok {
+		return weidInt
 	}
-
-	// 尝试从GET参数中获取uniacid
-	if weid == 0 {
-		if uniacid := c.Query("uniacid"); uniacid != "" {
-			if val, err := strconv.Atoi(uniacid); err == nil {
-				weid = val
-			}
-		}
+	// 尝试从float64类型转换
+	if weidFloat, ok := weid.(float64); ok {
+		return int(weidFloat)
 	}
+	log.Printf("helper weid%v 类型转换失败:类型%T", weid, weid)
+	return 0
+}
 
-	// 尝试从POST参数中获取uniacid
-	if weid == 0 {
-		if uniacid := c.PostForm("uniacid"); uniacid != "" {
-			if val, err := strconv.Atoi(uniacid); err == nil {
-				weid = val
-			}
-		}
+// Weid 获取微信公众号ID，适配Gin框架的实现
+func Sid(c *gin.Context) int {
+	// 尝试从不同的地方获取weid
+	sid, exists := c.Get("sid")
+	log.Println("helper weid:", sid)
+	if !exists {
+		return 0
 	}
-
-	return weid
+	// 尝试直接转换为int
+	if sidInt, ok := sid.(int); ok {
+		return sidInt
+	}
+	// 尝试从float64类型转换
+	if sidFloat, ok := sid.(float64); ok {
+		return int(sidFloat)
+	}
+	log.Printf("helper sid%v 类型转换失败:类型%T", sid, sid)
+	return 0
 }
 
 // Ocid 获取ocid参数值

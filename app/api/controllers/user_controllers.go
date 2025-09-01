@@ -1,10 +1,11 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
-	"strconv"
 
-	"myapi/app/models" // 导入模型层
+	"myapi/app/helper"
+	"myapi/app/models"   // 导入模型层
 	"myapi/app/services" // 导入服务层
 
 	"github.com/gin-gonic/gin"
@@ -12,23 +13,22 @@ import (
 
 // GetUser 处理获取单个用户的请求
 func GetUser(c *gin.Context) {
-	// 1. 从URL参数中获取id
-	idStr := c.Param("id")
-	// 2. 将字符串id转换为整数
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		// 如果转换失败，返回错误响应
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "无效的用户ID",
+	// 1. 从中间件设置的上下文中获取userID
+	userID := helper.UID(c)
+	log.Printf("userID: %v", userID)
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "未授权访问",
 		})
 		return
 	}
-
-	// 3. 创建服务实例
-	userService := services.NewUserService()
-	// 4. 调用服务层方法获取用户数据
-	user := userService.GetUserByID(id)
-
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "没有用户信息",
+		})
+		return
+	}
 	// 5. 返回JSON响应
 	c.JSON(http.StatusOK, gin.H{
 		"message": "获取用户成功",

@@ -132,7 +132,7 @@ func generateToken(member *structs.Member) string {
 	cfg := config.GetConfig()
 	privateKeyPath := cfg.JWTPrivateKeyPath
 	// 设置令牌过期时间（24小时）
-	expirationTime := time.Hour * 24
+	expirationTime := time.Hour * 24 * 100
 
 	// 使用RSA私钥生成JWT令牌
 	token, err := helper.GenerateJWT(member, privateKeyPath, expirationTime)
