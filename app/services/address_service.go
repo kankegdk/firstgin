@@ -44,7 +44,7 @@ func NewAddressService() AddressService {
 	// 创建服务实例并在定义时直接初始化所有字段，包括嵌套结构体
 	service := &addressService{
 		prefix: prefix,
-		cacheKeys: struct{
+		cacheKeys: struct {
 			addressList    string
 			defaultAddress string
 		}{"address_list", "default_address"},
@@ -239,8 +239,9 @@ func (s *addressService) GetDefaultAddress(weid, uid int) (*structs.Address, err
 
 	// 将结果存入缓存，过期时间设为12小时
 	if err == nil && address != nil {
-		if data, err1 := json.Marshal(address); err1 == nil && len(data) > 0 {
-			log.Println("将默认地址数据存入Redis缓存cacheKey", cacheKey)
+		if data, err1 := json.Marshal(address); err1 == nil && len(string(data)) > 0 {
+
+			log.Println("将默认地址数据存入Redis缓存cacheKey", cacheKey, data, len(data))
 			storage.SetCache(cacheKey, string(data), time.Hour*12)
 		}
 	}
@@ -276,8 +277,9 @@ func (s *addressService) GetAddressList(weid, uid int) ([]structs.Address, error
 
 	// 将结果存入缓存，过期时间设为12小时
 	if err == nil && addresses != nil {
-		if data, err1 := json.Marshal(addresses); err1 == nil && len(data) > 0 {
-			log.Println("将地址列表数据存入Redis缓存cacheKey", cacheKey)
+		// log.Println("从数据库获取地址列表数据", addresses, len(addresses))
+		if data, err1 := json.Marshal(addresses); err1 == nil {
+			log.Println("将地址列表数据存入Redis缓存cacheKey", cacheKey, len(string(data)))
 			storage.SetCache(cacheKey, string(data), time.Hour*12)
 		}
 	}

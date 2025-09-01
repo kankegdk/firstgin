@@ -36,7 +36,6 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Recovery())
 	// 先应用自定义的访问日志中间件
-	// router.Use(logger.GinLogger())
 
 	// 然后再设置路由
 	api.SetupAPIRoutes(router, cnf.AppName)

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 
 	"myapi/app/config"
@@ -14,7 +15,7 @@ func AddAddress(data structs.Address) (int64, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return 0, nil
+		return 0, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -39,7 +40,7 @@ func UpdateAddress(id int, data structs.Address) error {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil
+		return errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -63,7 +64,7 @@ func DeleteAddress(id int) error {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil
+		return errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -87,7 +88,7 @@ func GetAddressDetail(id, uid int) (*structs.Address, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil, nil
+		return nil, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -112,7 +113,7 @@ func GetDefaultAddress(weid, uid int) (*structs.Address, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil, nil
+		return nil, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -137,7 +138,7 @@ func GetAddressList(weid, uid int) ([]structs.Address, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return []structs.Address{}, nil
+		return []structs.Address{}, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -162,7 +163,7 @@ func CancelOtherDefaultAddress(weid, uid int) error {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil
+		return errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -186,7 +187,7 @@ func SetDefaultAddress(id, weid, uid int) error {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil
+		return errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀

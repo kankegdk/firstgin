@@ -56,10 +56,14 @@ func (s *adService) GetAllAds(pageUrl string) []structs.Ad {
 		}
 
 		// 缓存未命中，从数据库获取数据
-		ads := models.GetAllAds(pageUrl)
+		ads, err := models.GetAllAds(pageUrl)
+		if err != nil {
+			log.Println("从数据库获取广告数据失败:", err)
+			return []structs.Ad{}
+		}
 
 		// 将结果存入缓存，过期时间设为24小时
-		if data, err := json.Marshal(ads); err == nil && len(data) > 0 {
+		if data, err := json.Marshal(ads); err == nil {
 			log.Println("将广告数据存入Redis缓存cacheKey", cacheKey)
 			storage.SetCache(cacheKey, string(data), time.Hour*24)
 		}

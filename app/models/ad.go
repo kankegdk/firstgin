@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 
 	"myapi/app/config"
@@ -10,12 +11,12 @@ import (
 
 // GetAllAds 从数据库获取所有广告的方法
 // pageUrl 参数用于筛选特定页面的广告，如果为空则返回所有广告
-func GetAllAds(pageUrl string) []structs.Ad {
+func GetAllAds(pageUrl string) ([]structs.Ad, error) {
 	// 获取共享的gorm连接实例
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return []structs.Ad{}
+		return []structs.Ad{}, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -33,8 +34,8 @@ func GetAllAds(pageUrl string) []structs.Ad {
 	result := query.Find(&ads)
 	if result.Error != nil {
 		log.Printf("查询广告数据失败: %v", result.Error)
-		return []structs.Ad{}
+		return []structs.Ad{}, result.Error
 	}
 
-	return ads
+	return ads, nil
 }

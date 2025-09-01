@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"log"
 	"myapi/app/config"
 	"myapi/app/storage"
@@ -16,7 +17,7 @@ func GetMemberByUsername(username string) (*structs.Member, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil, nil
+		return nil, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -46,7 +47,7 @@ func GetMemberByTelephone(telephone string) (*structs.Member, error) {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil, nil
+		return nil, errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
@@ -76,7 +77,7 @@ func UpdateMemberLastLogin(id int, lastIp string) error {
 	gormDB := storage.GetGormDB()
 	if gormDB == nil {
 		log.Println("GORM连接为空")
-		return nil
+		return errors.New("数据库连接失败")
 	}
 
 	// 获取表前缀
