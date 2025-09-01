@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"log"
@@ -15,13 +16,17 @@ import (
 	"time"
 
 	"myapi/app/config"
+	"myapi/app/structs"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // JWTClaims 定义JWT声明结构
 type JWTClaims struct {
-	UserID int `json:"user_id"`
+	UserID   int                 `json:"user_id"`
+	Username string              `json:"username"`
+	Phone    string              `json:"phone"`
+	Member   map[string]interface{} `json:"member,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -117,6 +122,7 @@ func LoadPrivateKey(privateKeyPath string) (*rsa.PrivateKey, error) {
 	if block.Type == "ENCRYPTED RSA PRIVATE KEY" {
 		log.Printf("检测到加密的私钥，尝试解密...")
 		// 解密私钥数据
+
 		privateKeyBytes, err = decryptData(block.Bytes, encryptionKey)
 		if err != nil {
 			log.Printf("解密私钥失败: %v", err)
@@ -227,7 +233,7 @@ func LoadPublicKey(publicKeyPath string) (*rsa.PublicKey, error) {
 }
 
 // GenerateJWT 使用RSA私钥生成JWT令牌
-func GenerateJWT(userID int, privateKeyPath string, expirationTime time.Duration) (string, error) {
+func GenerateJWT(member *structs.Member, privateKeyPath string, expirationTime time.Duration) (string, error) {
 	// 加载私钥
 	privateKey, err := LoadPrivateKey(privateKeyPath)
 	// log.Println("privateKey:", privateKey, "path:", privateKeyPath)
@@ -250,9 +256,36 @@ func GenerateJWT(userID int, privateKeyPath string, expirationTime time.Duration
 	// 设置令牌过期时间
 	expiration := time.Now().Add(expirationTime)
 
+	// 将Member结构体转换为map[string]interface{}
+	memberMap := make(map[string]interface{})
+	memberJSON, err := json.Marshal(member)
+	if err != nil {
+		log.Printf("转换Member到JSON失败: %v", err)
+		// 如果转换失败，手动构建map
+		memberMap["id"] = member.ID
+		memberMap["username"] = member.Username
+		memberMap["telephone"] = member.Telephone
+		memberMap["nickname"] = member.Nickname
+		memberMap["status"] = member.Status
+	} else {
+		// 将JSON转换为map
+		if err := json.Unmarshal(memberJSON, &memberMap); err != nil {
+			log.Printf("JSON转换为map失败: %v", err)
+			// 如果转换失败，手动构建map
+			memberMap["id"] = member.ID
+			memberMap["username"] = member.Username
+			memberMap["telephone"] = member.Telephone
+			memberMap["nickname"] = member.Nickname
+			memberMap["status"] = member.Status
+		}
+	}
+
 	// 创建声明
 	claims := &JWTClaims{
-		UserID: userID,
+		UserID:   member.ID,
+		Username: member.Username,
+		Phone:    member.Telephone,
+		Member:   memberMap,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiration),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),

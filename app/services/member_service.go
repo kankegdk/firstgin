@@ -59,7 +59,7 @@ func (s *memberService) LoginByPassword(username, password string, clientIP stri
 	}
 
 	// 5. 生成JWT
-	token := generateToken(member.ID)
+	token := generateToken(member)
 
 	return member, token, nil
 }
@@ -92,7 +92,7 @@ func (s *memberService) LoginBySmsCode(telephone, code string, clientIP string) 
 	}
 
 	// 5. 生成JWT令牌
-	token := generateToken(member.ID)
+	token := generateToken(member)
 
 	return member, token, nil
 }
@@ -127,7 +127,7 @@ func (s *memberService) VerifyPassword(inputPassword, storedPassword, salt strin
 }
 
 // generateToken 使用非对称加密的JWT库生成令牌
-func generateToken(userID int) string {
+func generateToken(member *structs.Member) string {
 	// 获取配置
 	cfg := config.GetConfig()
 	privateKeyPath := cfg.JWTPrivateKeyPath
@@ -135,12 +135,12 @@ func generateToken(userID int) string {
 	expirationTime := time.Hour * 24
 
 	// 使用RSA私钥生成JWT令牌
-	token, err := helper.GenerateJWT(userID, privateKeyPath, expirationTime)
+	token, err := helper.GenerateJWT(member, privateKeyPath, expirationTime)
 	if err != nil {
 		// 如果生成失败，使用默认的简单令牌作为备用方案
 		log.Printf("生成JWT令牌失败: %v\n", err)
 		timestamp := time.Now().Unix()
-		return fmt.Sprintf("%d:%d:%s", userID, timestamp, generateRandomString(16))
+		return fmt.Sprintf("%d:%d:%s", member.ID, timestamp, generateRandomString(16))
 	}
 
 	return token

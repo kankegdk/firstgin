@@ -12,33 +12,29 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/joho/godotenv"
+	"myapi/app/config"
 )
 
 func main() {
-	// 设置密钥保存路径
-	privateKeyPath := "jwt_private.pem"
-	publicKeyPath := "jwt_public.pem"
+	// 初始化配置（使用与主应用相同的配置加载逻辑）
+	config.Init()
+	cfg := config.GetConfig()
 
-	// 确保keys目录存在
-	keysDir := filepath.Dir(privateKeyPath)
-	if err := os.MkdirAll(keysDir, 0755); err != nil {
-		panic("无法创建keys目录: " + err.Error())
+	// 获取密钥保存路径（从配置中读取）
+	privateKeyPath := cfg.JWTPrivateKeyPath
+	publicKeyPath := cfg.JWTPublicKeyPath
+
+	// 确保密钥文件所在目录存在
+	privateKeyDir := filepath.Dir(privateKeyPath)
+	if err := os.MkdirAll(privateKeyDir, 0755); err != nil {
+		panic("无法创建私钥目录: " + err.Error())
 	}
 
-	// 加载环境配置
-	if err := godotenv.Load("../env/jwt.env"); err != nil {
-		// 如果无法加载配置文件，尝试从当前目录加载
-		if err := godotenv.Load(); err != nil {
-			fmt.Println("警告: 无法加载环境配置文件，将使用默认配置")
-		}
-	}
-
-	// 从环境变量获取加密密钥，如果没有则使用默认值
-	encryptionKey := os.Getenv("JWT_SECRET")
+	// 获取加密密钥
+	encryptionKey := cfg.JWTSecret
 	if encryptionKey == "" {
 		encryptionKey = "default_encryption_key" // 默认加密密钥
-		fmt.Println("警告: 未设置JWT_SECRET环境变量，使用默认密钥")
+		fmt.Println("警告: JWT_SECRET为空，使用默认密钥")
 	}
 	// 注释掉敏感日志
 	// println("加密密钥: " + encryptionKey)

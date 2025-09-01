@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"myapi/app/config"
 	"myapi/app/helper"
 	"myapi/app/logs"
+
+	"github.com/gin-gonic/gin"
 )
 
 // AuthMiddleware JWT认证中间件
@@ -42,7 +43,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		tokenString := parts[1]
 		cfg := config.GetConfig()
 		publicKeyPath := cfg.JWTPublicKeyPath
-		
+
 		// 使用RSA公钥解析和验证JWT
 		claims, err := helper.ParseJWT(tokenString, publicKeyPath)
 		if err != nil {
@@ -60,7 +61,7 @@ func AuthMiddleware() gin.HandlerFunc {
 					return
 				}
 			}
-			
+
 			logs.Debug("JWT验证失败:", err)
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
@@ -69,6 +70,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+		// log.Println("claims:", claims)
 
 		// 4. Token验证通过，将用户信息存入上下文
 		c.Set("userID", claims.UserID)
@@ -91,7 +93,7 @@ func OptionalAuth() gin.HandlerFunc {
 				tokenString := parts[1]
 				cfg := config.GetConfig()
 				publicKeyPath := cfg.JWTPublicKeyPath
-				
+
 				// 尝试解析JWT令牌
 				claims, err := helper.ParseJWT(tokenString, publicKeyPath)
 				if err == nil {
@@ -129,12 +131,12 @@ func extractUserIDFromSimpleToken(token string) int {
 	if len(parts) != 3 {
 		return 0
 	}
-	
+
 	// 尝试解析第一个部分为用户ID
 	userID, err := strconv.Atoi(parts[0])
 	if err != nil {
 		return 0
 	}
-	
+
 	return userID
 }
