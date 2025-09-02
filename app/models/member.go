@@ -11,6 +11,16 @@ import (
 	"gorm.io/gorm"
 )
 
+// 全局变量存储完整表名
+var memberTableName string
+
+// init函数在包初始化时执行，只配置一次表前缀
+func init() {
+	// 获取表前缀
+	tablePrefix := config.GetString("dbPrefix", "")
+	memberTableName = tablePrefix + "member"
+}
+
 // GetMemberByUsername 根据用户名获取会员信息
 func GetMemberByUsername(username string) (*structs.Member, error) {
 	// 获取共享的gorm连接实例
@@ -20,13 +30,8 @@ func GetMemberByUsername(username string) (*structs.Member, error) {
 		return nil, errors.New("数据库连接失败")
 	}
 
-	// 获取表前缀
-	cfg := config.GetDatabaseConfig()
-	tablePrefix := cfg.GetTablePrefix()
-	tableName := tablePrefix + "member"
-
 	member := &structs.Member{}
-	result := gormDB.Table(tableName).
+	result := gormDB.Table(memberTableName).
 		Where("username = ?", username).
 		First(member)
 
@@ -50,13 +55,8 @@ func GetMemberByTelephone(telephone string) (*structs.Member, error) {
 		return nil, errors.New("数据库连接失败")
 	}
 
-	// 获取表前缀
-	cfg := config.GetDatabaseConfig()
-	tablePrefix := cfg.GetTablePrefix()
-	tableName := tablePrefix + "member"
-
 	member := &structs.Member{}
-	result := gormDB.Table(tableName).
+	result := gormDB.Table(memberTableName).
 		Where("telephone = ?", telephone).
 		First(member)
 
@@ -80,11 +80,6 @@ func UpdateMemberLastLogin(id int, lastIp string) error {
 		return errors.New("数据库连接失败")
 	}
 
-	// 获取表前缀
-	cfg := config.GetDatabaseConfig()
-	tablePrefix := cfg.GetTablePrefix()
-	tableName := tablePrefix + "member"
-
 	// 构建更新数据
 	updateData := map[string]interface{}{
 		"lastdate": time.Now().Unix(),
@@ -92,7 +87,7 @@ func UpdateMemberLastLogin(id int, lastIp string) error {
 	}
 
 	// 执行更新操作
-	result := gormDB.Table(tableName).
+	result := gormDB.Table(memberTableName).
 		Where("id = ?", id).
 		Updates(updateData).
 		UpdateColumn("loginnum", gorm.Expr("loginnum + ?", 1))

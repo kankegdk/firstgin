@@ -40,7 +40,7 @@ type addressService struct {
 // NewAddressService 创建一个新的地址服务实例
 func NewAddressService() AddressService {
 	// 获取Redis配置前缀
-	prefix := config.GetRedisConfig().Prefix
+	prefix := config.GetString("redisPrefix", "")
 	// 创建服务实例并在定义时直接初始化所有字段，包括嵌套结构体
 	service := &addressService{
 		prefix: prefix,
@@ -241,7 +241,7 @@ func (s *addressService) GetDefaultAddress(weid, uid int) (*structs.Address, err
 	if err == nil && address != nil {
 		if data, err1 := json.Marshal(address); err1 == nil && len(string(data)) > 0 {
 
-			log.Println("将默认地址数据存入Redis缓存cacheKey", cacheKey, data, len(data))
+			log.Println("将默认地址数据存入Redis缓存cacheKey", cacheKey, len(data))
 			storage.SetCache(cacheKey, string(data), time.Hour*12)
 		}
 	}

@@ -104,8 +104,7 @@ func LoadPrivateKey(privateKeyPath string) (*rsa.PrivateKey, error) {
 	log.Printf("成功解码PEM数据，类型: %s", block.Type)
 
 	// 获取配置的JWT_SECRET作为解密密钥
-	cfg := config.GetConfig()
-	encryptionKey := cfg.JWTSecret
+	encryptionKey := config.GetString("jwtSecret", "")
 	if encryptionKey == "" {
 		log.Printf("警告: JWT_SECRET为空，使用默认密钥")
 		encryptionKey = "default_encryption_key"

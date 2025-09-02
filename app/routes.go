@@ -24,10 +24,10 @@ func SetupRouter() *gin.Engine {
 	// 	dbcfg.User, dbcfg.Password, dbcfg.Host, dbcfg.Port, dbcfg.DBName)
 
 	// 设置API路由
-	api.SetupAPIRoutes(r, cnf.AppName)
+	api.SetupAPIRoutes(r, cnf["appName"])
 
 	// 设置admin路由
-	admin.SetupAdminRouter(r, cnf.BackendAppName)
+	admin.SetupAdminRouter(r, cnf["backendAppName"])
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": " hello world",

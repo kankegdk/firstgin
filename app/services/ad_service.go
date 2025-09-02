@@ -30,7 +30,7 @@ func (s *adService) GetAllAds(pageUrl string) []structs.Ad {
 	// 如果pageUrl有值，使用Redis缓存
 	if pageUrl != "" {
 		// 从配置中获取Redis前缀
-		prefix := config.GetRedisConfig().Prefix
+		prefix := config.GetString("redisPrefix", "")
 
 		// 构建缓存键
 		cacheKey := prefix + ":" + "ads:" + pageUrl

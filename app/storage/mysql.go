@@ -17,10 +17,20 @@ var GormDB *gorm.DB
 
 // InitMySQL 初始化MySQL连接池
 func InitMySQL() error {
-	cfg := config.GetDatabaseConfig()
+	// 直接获取数据库配置
+	user := config.GetString("dbUser", "root")
+	password := config.GetString("dbPassword", "")
+	host := config.GetString("dbHost", "localhost")
+	port := config.GetString("dbPort", "3306")
+	dbName := config.GetString("dbName", "mydatabase")
+	charset := config.GetString("dbCharset", "utf8mb4")
+	maxLifetime := config.GetInt("dbMaxLifetime", 30)
+	maxIdleConns := config.GetInt("dbMaxIdleConns", 100)
+	maxOpenConns := config.GetInt("dbMaxOpenConns", 10)
 
 	// 构建DSN (Data Source Name)
-	dsn := cfg.GetConnectionString()
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s&parseTime=True&loc=Local",
+		user, password, host, port, dbName, charset)
 
 	// 打开数据库连接
 	db, err := sql.Open("mysql", dsn)
@@ -34,9 +44,9 @@ func InitMySQL() error {
 	}
 
 	// 配置连接池
-	db.SetMaxOpenConns(cfg.MaxOpenConns)
-	db.SetMaxIdleConns(cfg.MaxIdleConns)
-	db.SetConnMaxLifetime(time.Duration(cfg.MaxLifetime))
+	db.SetMaxOpenConns(maxOpenConns)
+	db.SetMaxIdleConns(maxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(maxLifetime))
 
 	MySQLDB = db
 	log.Println("MySQL连接池初始化成功")

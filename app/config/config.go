@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,76 +11,56 @@ import (
 	"github.com/joho/godotenv" // 用于从.env文件加载环境变量
 )
 
-// Config 全局配置结构体
-type Config struct {
-	AppName           string
-	Environment       string // development, production, testing
-	ServerPort        string
-	JWTSecret         string
-	JWTPrivateKeyPath string // JWT私钥路径
-	JWTPublicKeyPath  string // JWT公钥路径
-	DebugMode         bool
-	DatabaseURL       string
-	BackendAppName    string
-	AccessLogPath     string
-	DebugLogPath      string
-}
-
 var (
-	config *Config
+	config map[string]interface{}
 	once   sync.Once // 确保配置只初始化一次
 )
 
 // Init 初始化配置
 func Init() {
 	once.Do(func() {
-		// 1. 加载env目录下的所有.env文件
-		// 首先加载基础.env文件（如果存在）
-		err := godotenv.Load(".env")
+		// 初始化配置map
+		config = make(map[string]interface{})
+
+		// 自动扫描并加载env目录下的所有.env文件
+		envDir, _ := filepath.Abs("env")
+		fileInfos, err := os.ReadDir(envDir)
 		if err != nil {
-			log.Printf("未找到或无法加载根目录.env文件: %v", err)
-		}
-
-		// 加载env目录下的所有.env文件
-		envFiles := []string{
-			"env/app.env",
-			"env/jwt.env",
-			"env/database.env",
-			"env/redis.env",
-			"env/log.env",
-		}
-
-		for _, envFile := range envFiles {
-			absPath, _ := filepath.Abs(envFile)
-			err := godotenv.Load(absPath)
-			if err != nil {
-				log.Printf("未找到或无法加载配置文件 %s: %v", absPath, err)
-			} else {
-				log.Printf("成功加载配置文件: %s", absPath)
+			log.Printf("无法读取env目录: %v", err)
+		} else {
+			for _, fileInfo := range fileInfos {
+				if !fileInfo.IsDir() && filepath.Ext(fileInfo.Name()) == ".env" {
+					envFile := filepath.Join(envDir, fileInfo.Name())
+					// 加载.env文件到map
+					envMap, err := godotenv.Read(envFile)
+					if err != nil {
+						log.Printf("未找到或无法加载配置文件 %s: %v", envFile, err)
+					} else {
+						log.Printf("成功加载配置文件: %s", envFile)
+						// 将配置合并到全局config map中
+						for key, value := range envMap {
+							// 尝试将值转换为合适的类型
+							if boolValue, err := strconv.ParseBool(value); err == nil {
+								config[key] = boolValue
+							} else if intValue, err := strconv.Atoi(value); err == nil {
+								config[key] = intValue
+							} else if floatValue, err := strconv.ParseFloat(value, 64); err == nil {
+								config[key] = floatValue
+							} else {
+								// 保留为字符串
+								config[key] = value
+							}
+						}
+					}
+				}
 			}
 		}
-
-		// 2. 初始化配置
-		config = &Config{
-			AppName:           getEnv("APP_NAME", "MyGinApp"),
-			Environment:       getEnv("ENVIRONMENT", "development"),
-			ServerPort:        getEnv("SERVER_PORT", "8080"),
-			BackendAppName:    getEnv("BackendAppName", "admin"),
-			JWTSecret:         getEnv("JWT_SECRET", "default_encryption_key"),
-			JWTPrivateKeyPath: getEnv("JWT_PRIVATE_KEY_PATH", "keys/jwt_private.pem"),
-			JWTPublicKeyPath:  getEnv("JWT_PUBLIC_KEY_PATH", "keys/jwt_public.pem"),
-			DebugMode:         getEnvAsBool("DEBUG_MODE", true),
-			DatabaseURL:       getEnv("DATABASE_URL", "host=localhost user=postgres dbname=mydb sslmode=disable"),
-			AccessLogPath:     getEnv("ACCESS_LOG_PATH", "logs/access.log"),
-			DebugLogPath:      getEnv("DEBUG_LOG_PATH", "logs/debug.log"),
-		}
-
-		log.Printf("配置初始化完成: %s (%s)", config.AppName, config.Environment)
+		log.Println("配置加载完成")
 	})
 }
 
-// GetConfig 获取全局配置实例（单例模式）
-func GetConfig() *Config {
+// GetConfig 获取全局配置map（单例模式）
+func GetConfig() map[string]interface{} {
 	if config == nil {
 		Init()
 	}
@@ -87,52 +68,125 @@ func GetConfig() *Config {
 }
 
 // IsDevelopment 判断是否是开发环境
-func (c *Config) IsDevelopment() bool {
-	return c.Environment == "development"
+func IsDevelopment() bool {
+	return GetString("environment", "") == "development"
 }
 
 // IsProduction 判断是否是生产环境
-func (c *Config) IsProduction() bool {
-	return c.Environment == "production"
+func IsProduction() bool {
+	return GetString("environment", "") == "production"
 }
 
 // GetServerAddress 获取服务器监听地址
-func (c *Config) GetServerAddress() string {
-	return ":" + c.ServerPort
+func GetServerAddress() string {
+	return ":" + GetString("serverPort", "8080")
 }
 
-// Helper function to get environment variable or return default value
-func getEnv(key, defaultValue string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
+// GetString 获取字符串类型的配置值
+func GetString(key string, defaultValue string) string {
+	if config == nil {
+		Init()
 	}
+
+	value, exists := config[key]
+	if !exists {
+		return defaultValue
+	}
+
+	// 根据值的实际类型进行转换
+	switch v := value.(type) {
+	case string:
+		return v
+	default:
+		// 尝试将其他类型转换为字符串
+		return fmt.Sprintf("%v", v)
+	}
+}
+
+// GetBool 获取布尔类型的配置值
+func GetBool(key string, defaultValue bool) bool {
+	if config == nil {
+		Init()
+	}
+
+	value, exists := config[key]
+	if !exists {
+		return defaultValue
+	}
+
+	// 尝试直接获取布尔值
+	if boolValue, ok := value.(bool); ok {
+		return boolValue
+	}
+
+	// 尝试将字符串转换为布尔值
+	if strValue, ok := value.(string); ok {
+		if boolValue, err := strconv.ParseBool(strValue); err == nil {
+			return boolValue
+		}
+	}
+
 	return defaultValue
 }
 
-// Helper function to get environment variable as boolean
-func getEnvAsBool(key string, defaultValue bool) bool {
-	strValue := getEnv(key, "")
-	if strValue == "" {
+// GetInt 获取整数类型的配置值
+func GetInt(key string, defaultValue int) int {
+	if config == nil {
+		Init()
+	}
+
+	value, exists := config[key]
+	if !exists {
 		return defaultValue
 	}
 
-	value, err := strconv.ParseBool(strValue)
-	if err != nil {
-		return defaultValue
+	// 尝试直接获取整数值
+	if intValue, ok := value.(int); ok {
+		return intValue
 	}
-	return value
+
+	// 尝试将其他数值类型转换为int
+	if floatValue, ok := value.(float64); ok {
+		return int(floatValue)
+	}
+
+	// 尝试将字符串转换为int
+	if strValue, ok := value.(string); ok {
+		if intValue, err := strconv.Atoi(strValue); err == nil {
+			return intValue
+		}
+	}
+
+	return defaultValue
 }
 
-// Helper function to get environment variable as integer
-func getEnvAsInt(key string, defaultValue int) int {
-	strValue := getEnv(key, "")
-	if strValue == "" {
+// GetFloat 获取浮点类型的配置值
+func GetFloat(key string, defaultValue float64) float64 {
+	if config == nil {
+		Init()
+	}
+
+	value, exists := config[key]
+	if !exists {
 		return defaultValue
 	}
 
-	value, err := strconv.Atoi(strValue)
-	if err != nil {
-		return defaultValue
+	// 尝试直接获取浮点值
+	if floatValue, ok := value.(float64); ok {
+		return floatValue
 	}
-	return value
+
+	// 尝试将整数类型转换为float64
+	if intValue, ok := value.(int); ok {
+		return float64(intValue)
+	}
+
+	// 尝试将字符串转换为float64
+	if strValue, ok := value.(string); ok {
+		if floatValue, err := strconv.ParseFloat(strValue, 64); err == nil {
+			return floatValue
+		}
+	}
+
+	return defaultValue
 }

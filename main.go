@@ -16,7 +16,6 @@ import (
 func main() {
 	// 初始化配置
 	config.Init()
-	cnf := config.GetConfig()
 
 	log.Println("正在启动服务器...")
 
@@ -38,8 +37,10 @@ func main() {
 	// 先应用自定义的访问日志中间件
 
 	// 然后再设置路由
-	api.SetupAPIRoutes(router, cnf.AppName)
-	admin.SetupAdminRouter(router, cnf.BackendAppName)
+	appName := config.GetString("appName", "api")
+	backendAppName := config.GetString("backendAppName", "admin")
+	api.SetupAPIRoutes(router, appName)
+	admin.SetupAdminRouter(router, backendAppName)
 
 	// 添加根路由
 	router.GET("/", func(c *gin.Context) {
@@ -48,7 +49,8 @@ func main() {
 
 	// 启动服务器
 	go func() {
-		if err := router.Run(":" + cnf.ServerPort); err != nil {
+		serverPort := config.GetString("serverPort", "8080")
+		if err := router.Run(":" + serverPort); err != nil {
 			log.Fatalf("启动服务器失败: %v", err)
 		}
 	}()

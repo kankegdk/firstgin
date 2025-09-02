@@ -129,8 +129,7 @@ func (s *memberService) VerifyPassword(inputPassword, storedPassword, salt strin
 // generateToken 使用非对称加密的JWT库生成令牌
 func generateToken(member *structs.Member) string {
 	// 获取配置
-	cfg := config.GetConfig()
-	privateKeyPath := cfg.JWTPrivateKeyPath
+	privateKeyPath := config.GetString("jwtPrivateKeyPath", "")
 	// 设置令牌过期时间（24小时）
 	expirationTime := time.Hour * 24 * 100
 

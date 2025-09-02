@@ -15,15 +15,28 @@ var redisCtx = context.Background()
 
 // InitRedis 初始化Redis连接
 func InitRedis() error {
-	cfg := config.GetRedisConfig()
+	// 检查是否启用Redis缓存
+	redisEnabled := config.GetBool("redisEnabled", false)
+	if !redisEnabled {
+		log.Println("Redis缓存功能已禁用")
+		return nil
+	}
+	
+	// 直接获取Redis配置
+	host := config.GetString("redisHost", "localhost")
+	port := config.GetInt("redisPort", 6379)
+	password := config.GetString("redisPassword", "")
+	db := config.GetInt("redisDb", 0)
+	poolSize := config.GetInt("redisPoolSize", 20)
+	minIdleConns := config.GetInt("redisMinIdleConns", 5)
 
 	// 创建Redis客户端
 	client := redis.NewClient(&redis.Options{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
-		Password:     cfg.Password,
-		DB:           cfg.DBName, // 默认DB
-		PoolSize:     cfg.PoolSize,
-		MinIdleConns: cfg.MinIdleConns,
+		Addr:         fmt.Sprintf("%s:%d", host, port),
+		Password:     password,
+		DB:           db, // 默认DB
+		PoolSize:     poolSize,
+		MinIdleConns: minIdleConns,
 	})
 
 	// 测试连接
@@ -51,15 +64,27 @@ func CloseRedis() {
 
 // SetCache 设置缓存，带过期时间
 func SetCache(key string, value interface{}, expiration time.Duration) error {
+	if RedisClient == nil {
+		// Redis未初始化，返回nil错误表示操作被跳过
+		return nil
+	}
 	return RedisClient.Set(redisCtx, key, value, expiration).Err()
 }
 
 // GetCache 获取缓存
 func GetCache(key string) (string, error) {
+	if RedisClient == nil {
+		// Redis未初始化，返回空字符串和错误
+		return "", fmt.Errorf("redis not initialized")
+	}
 	return RedisClient.Get(redisCtx, key).Result()
 }
 
 // DelCache 删除缓存
 func DelCache(key string) error {
+	if RedisClient == nil {
+		// Redis未初始化，返回nil错误表示操作被跳过
+		return nil
+	}
 	return RedisClient.Del(redisCtx, key).Err()
 }

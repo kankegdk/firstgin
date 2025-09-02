@@ -17,7 +17,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// 1. 从请求头中获取token
 		authHeader := c.GetHeader("Authorization")
-		log.Println("Authorization header:", authHeader)
+		//log.Println("Authorization header:", authHeader)
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"code":    401,
@@ -40,8 +40,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// 3. 解析并验证JWT令牌
 		tokenString := parts[1]
-		cfg := config.GetConfig()
-		publicKeyPath := cfg.JWTPublicKeyPath
+		publicKeyPath := config.GetString("jwtPublicKeyPath", "")
 
 		// 使用RSA公钥解析和验证JWT
 		claims, err := helper.ParseJWT(tokenString, publicKeyPath)
@@ -71,7 +70,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		} else {
 			log.Println("claims.Member 中没有 sid 字段")
 		}
-		log.Println("claims:", claims.Member)
 		// 5. 继续处理下一个中间件或路由 handler
 		c.Next()
 	}
