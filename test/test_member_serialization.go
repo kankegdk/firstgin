@@ -12,7 +12,6 @@ import (
 func main() {
 	// 初始化配置
 	config.Init()
-	cfg := config.GetConfig()
 
 	fmt.Println("测试Member对象JSON序列化...")
 
@@ -26,7 +25,7 @@ func main() {
 	}
 
 	// 测试使用修改后的代码生成JWT
-	token, err := helper.GenerateJWT(member, cfg.JWTPrivateKeyPath, 24*time.Hour)
+	token, err := helper.GenerateJWT(member, config.GetString("jwtPrivateKeyPath", ""), 24*time.Hour)
 	if err != nil {
 		fmt.Printf("生成JWT失败: %v\n", err)
 		return
@@ -42,7 +41,7 @@ func main() {
 	}
 
 	// 验证JWT并检查Member字段是否正确解析
-	claims, err := helper.ParseJWT(token, cfg.JWTPublicKeyPath)
+	claims, err := helper.ParseJWT(token, config.GetString("jwtPublicKeyPath", ""))
 	if err != nil {
 		fmt.Printf("验证JWT失败: %v\n", err)
 		return
@@ -54,7 +53,7 @@ func main() {
 	fmt.Printf("手机号: %s\n", claims.Phone)
 	fmt.Printf("Member字段是否为map类型: %T\n", claims.Member)
 	fmt.Printf("Member字段键值对: %+v\n", claims.Member)
-	
+
 	// 尝试访问map中的值
 	if id, ok := claims.Member["id"].(float64); ok {
 		fmt.Printf("Member.id: %.0f\n", id)

@@ -18,11 +18,10 @@ import (
 func main() {
 	// 初始化配置（使用与主应用相同的配置加载逻辑）
 	config.Init()
-	cfg := config.GetConfig()
 
 	// 获取密钥保存路径（从配置中读取）
-	privateKeyPath := cfg.JWTPrivateKeyPath
-	publicKeyPath := cfg.JWTPublicKeyPath
+	privateKeyPath := config.GetString("jwtPrivateKeyPath", "")
+	publicKeyPath := config.GetString("jwtPublicKeyPath", "")
 
 	// 确保密钥文件所在目录存在
 	privateKeyDir := filepath.Dir(privateKeyPath)
@@ -31,7 +30,7 @@ func main() {
 	}
 
 	// 获取加密密钥
-	encryptionKey := cfg.JWTSecret
+	encryptionKey := config.GetString("jwtSecret", "")
 	if encryptionKey == "" {
 		encryptionKey = "default_encryption_key" // 默认加密密钥
 		fmt.Println("警告: JWT_SECRET为空，使用默认密钥")

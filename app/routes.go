@@ -16,7 +16,7 @@ func SetupRouter() *gin.Engine {
 	// 仅添加Recovery中间件来处理panic
 	r.Use(gin.Recovery())
 
-	cnf := config.GetConfig()
+	// cnf := config.GetConfig()
 	// fmt.Println(cnf.AppName)
 
 	// dbcfg := config.GetDatabaseConfig()
@@ -24,10 +24,10 @@ func SetupRouter() *gin.Engine {
 	// 	dbcfg.User, dbcfg.Password, dbcfg.Host, dbcfg.Port, dbcfg.DBName)
 
 	// 设置API路由
-	api.SetupAPIRoutes(r, cnf["appName"])
+	api.SetupAPIRoutes(r, config.GetString("appName", ""))
 
 	// 设置admin路由
-	admin.SetupAdminRouter(r, cnf["backendAppName"])
+	admin.SetupAdminRouter(r, config.GetString("backendAppName", ""))
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": " hello world",
