@@ -139,6 +139,14 @@ func GetClient(c *gin.Context) string {
 	return ptype
 }
 
+// GetWeid 获取当前站点ID（不需要Gin上下文的版本）
+// 这是一个公共方法，适配PHP中的weid()函数
+func GetWeid() int {
+	// TODO: 实现从配置或其他来源获取weid的逻辑
+	// 当前暂时返回默认值1
+	return 1
+}
+
 // AreaConversion 地区名称转换
 func AreaConversion(data string) string {
 	switch data {
