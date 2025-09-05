@@ -4,20 +4,9 @@ import (
 	"errors"
 	"log"
 
-	"myapi/app/config"
 	"myapi/app/storage"
 	"myapi/app/structs"
 )
-
-// 全局变量存储完整表名
-var addressTableName string
-
-// init函数在包初始化时执行，只配置一次表前缀
-func init() {
-	// 获取表前缀
-	tablePrefix := config.GetString("dbPrefix", "")
-	addressTableName = tablePrefix + "address"
-}
 
 // AddAddress 添加新地址
 func AddAddress(data structs.Address) (int64, error) {

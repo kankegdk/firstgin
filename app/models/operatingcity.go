@@ -6,24 +6,11 @@ import (
 	"log"
 	"time"
 
-	"myapi/app/config"
 	"myapi/app/storage"
 	"myapi/app/structs"
 
 	"gorm.io/gorm"
 )
-
-// 全局变量存储完整表名
-var operatingcityTableName string
-var operatingcityIncomelogTableName string
-
-// init函数在包初始化时执行，只配置一次表前缀
-func init() {
-	// 获取表前缀
-	tablePrefix := config.GetString("dbPrefix", "")
-	operatingcityTableName = tablePrefix + "operatingcity"
-	operatingcityIncomelogTableName = tablePrefix + "operatingcity_incomelog"
-}
 
 // GetOperatingcityByID 根据ID获取运营城市信息
 func GetOperatingcityByID(id int) ([]map[string]interface{}, error) {

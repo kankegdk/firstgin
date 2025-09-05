@@ -1,10 +1,10 @@
 package controllers
 
 import (
+	"log"
 	"myapi/app/helper"
 	"myapi/app/services"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,18 +17,9 @@ func LoginByPassword(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 
-	if err := c.ShouldBind(&loginData); err != nil {
-		// 检查错误信息，确定是哪个字段为空
-		if strings.Contains(err.Error(), "Username") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "用户名不能为空"})
-			return
-		} else if strings.Contains(err.Error(), "Password") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "密码不能为空"})
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
-			return
-		}
+	// 使用公共验证器验证请求
+	if !helper.ValidateRequest(c, &loginData) {
+		return
 	}
 
 	// 2. 获取客户端IP
@@ -62,21 +53,12 @@ func LoginByPassword(c *gin.Context) {
 func LoginBySmsCode(c *gin.Context) {
 	// 1. 解析请求体
 	var loginData struct {
-		Telephone string `json:"telephone" binding:"required,len=11"`
+		Telephone string `json:"telephone" binding:"required,len=11" customvalidate:"mobile"`
 		Code      string `json:"code" binding:"required,len=6"`
 	}
-	if err := c.ShouldBind(&loginData); err != nil {
-		// 检查错误信息，确定是哪个字段为空
-		if strings.Contains(err.Error(), "Telephone") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "手机号不能为空"})
-			return
-		} else if strings.Contains(err.Error(), "Code") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "验证码不能为空"})
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
-			return
-		}
+	// 使用公共验证器验证请求
+	if !helper.ValidateRequest(c, &loginData) {
+		return
 	}
 
 	// 2. 获取客户端IP
@@ -110,17 +92,13 @@ func LoginBySmsCode(c *gin.Context) {
 func SendSmsCode(c *gin.Context) {
 	// 1. 解析请求体
 	var smsData struct {
-		Telephone string `json:"telephone" binding:"required,len=11"`
+		Telephone string `json:"telephone" binding:"required,len=11" customvalidate:"mobile"`
 	}
-	if err := c.ShouldBind(&smsData); err != nil {
-		// 检查错误信息，确定是哪个字段为空
-		if strings.Contains(err.Error(), "Telephone") {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "手机号不能为空"})
-			return
-		} else {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数错误"})
-			return
-		}
+	// 使用公共验证器验证请求
+	if !helper.ValidateRequest(c, &smsData) {
+		log.Println("发送短信验证码失败: 请求参数验证失败")
+		log.Println("请求参数:", smsData)
+		return
 	}
 
 	// 2. 创建服务实例

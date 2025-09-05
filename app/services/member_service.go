@@ -7,9 +7,18 @@ import (
 	"myapi/app/config"
 	"myapi/app/helper"
 	"myapi/app/models"
+	"myapi/app/storage"
 	"myapi/app/structs"
 	"time"
 )
+
+// 包级变量存储Redis键前缀
+var smsCodePrefix string
+
+// init函数初始化Redis键前缀
+func init() {
+	smsCodePrefix = "sms_code:"
+}
 
 // MemberService 会员服务接口
 type MemberService interface {
@@ -94,6 +103,10 @@ func (s *memberService) LoginBySmsCode(telephone, code string, clientIP string) 
 	// 5. 生成JWT令牌
 	token := generateToken(member)
 
+	// 请查看短信验证代码
+	redisKey := fmt.Sprintf("%s%s", smsCodePrefix, telephone)
+	storage.DelCache(redisKey)
+
 	return member, token, nil
 }
 
@@ -109,10 +122,12 @@ func (s *memberService) SendSmsCode(telephone string) error {
 	}
 
 	// 2. 生成验证码
-	_ = generateSmsCode()
-
+	code := generateSmsCode()
+	log.Println("生成的验证码:", code)
 	// 3. 存储验证码到Redis并设置过期时间（简化实现）
 	// 实际项目中应该使用Redis客户端
+	redisKey := fmt.Sprintf("%s%s", smsCodePrefix, telephone)
+	storage.SetCache(redisKey, code, time.Minute*10)
 
 	// 4. 发送短信（简化实现）
 	// 实际项目中应该调用短信服务商API
@@ -152,9 +167,16 @@ func generateSmsCode() string {
 
 // verifySmsCode 验证短信验证码（简化实现）
 func verifySmsCode(telephone, code string) bool {
-	// 实际项目中应该从Redis中获取并验证
-	// 这里简单模拟验证
-	return len(code) == 6
+	// 从Redis中获取存储的验证码
+	redisKey := fmt.Sprintf("%s%s", smsCodePrefix, telephone)
+	redisCode, err := storage.GetCache(redisKey)
+	if err != nil {
+		log.Printf("从Redis获取验证码失败: %v", err)
+		return false
+	}
+
+	// 比较验证码
+	return redisCode == code && len(code) == 6
 }
 
 // generateRandomString 生成随机字符串

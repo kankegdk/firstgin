@@ -3,22 +3,10 @@ package models
 import (
 	"errors"
 	"log"
-	"myapi/app/config"
 	"myapi/app/storage"
 
 	"gorm.io/gorm"
 )
-
-var userTableName string
-
-func init() {
-	// 获取数据库前缀配置
-	prefix := config.GetString("dbPrefix", "")
-	// 构建完整表名
-	userTableName = prefix + "user"
-	// 添加日志，打印最终的表名，用于调试
-	log.Printf("初始化User模型，表名设置为: %s", userTableName)
-}
 
 // User 定义用户模型，用于GORM操作
 type User struct {

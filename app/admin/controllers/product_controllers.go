@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"myapi/app/models"
 	"myapi/app/services"
+	"myapi/app/structs"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,7 +53,7 @@ func GetAllProducts(c *gin.Context) {
 // CreateProduct 处理创建产品的请求
 func CreateProduct(c *gin.Context) {
 	// 1. 解析请求体
-	var product models.Product
+	var product structs.Product
 	if err := c.ShouldBindJSON(&product); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),

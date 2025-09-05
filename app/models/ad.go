@@ -4,20 +4,9 @@ import (
 	"errors"
 	"log"
 
-	"myapi/app/config"
 	"myapi/app/storage"
 	"myapi/app/structs"
 )
-
-// 全局变量存储完整表名
-var adTableName string
-
-// init函数在包初始化时执行，只配置一次表前缀
-func init() {
-	// 获取表前缀
-	tablePrefix := config.GetString("dbPrefix", "")
-	adTableName = tablePrefix + "ad"
-}
 
 // GetAllAds 从数据库获取所有广告的方法
 // pageUrl 参数用于筛选特定页面的广告，如果为空则返回所有广告

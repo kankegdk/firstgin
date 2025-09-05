@@ -269,7 +269,31 @@ func GetRealIP(c *gin.Context) string {
 		}
 	}
 	// 如果没有X-Forwarded-For头，使用RemoteAddr
+	ip := getClientIP(c)
+	return ip
+}
+
+// 获取客户端IP（优先IPv4）
+func getClientIP(c *gin.Context) string {
 	ip := c.ClientIP()
+	// 检查是否是IPv6地址（包含冒号）且不是::1以外的地址
+	if strings.Contains(ip, ":") && ip != "::1" {
+		// 尝试从X-Forwarded-For头中获取IPv4地址
+		xff := c.Request.Header.Get("X-Forwarded-For")
+		if xff != "" {
+			ips := strings.Split(xff, ",")
+			for _, v := range ips {
+				v = strings.TrimSpace(v)
+				if !strings.Contains(v, ":") {
+					return v
+				}
+			}
+		}
+	}
+	// 如果是::1（本地回环地址），返回127.0.0.1
+	if ip == "::1" {
+		return "127.0.0.1"
+	}
 	return ip
 }
 

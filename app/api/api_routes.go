@@ -26,12 +26,6 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 			users.POST("/create", controllers.CreateUser) // POST /api/users
 		}
 
-		// 产品相关路由
-		products := api.Group("/products")
-		{
-			products.GET("/", controllers.GetAllProducts)
-		}
-
 		// 地址相关路由
 		addresses := api.Group("/addresses")
 		{
@@ -62,6 +56,14 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		// 登录相关路由
 		public.POST("/login/password", controllers.LoginByPassword)
 		public.POST("/login/sms", controllers.LoginBySmsCode)
-		public.POST("/login/send-sms", controllers.SendSmsCode)
+		public.POST("/login/sendsms", controllers.SendSmsCode)
+
+		// 产品相关路由
+		products := public.Group("/products")
+		{
+			products.GET("/", controllers.GetAllProducts)
+			products.POST("/buynowinfo", controllers.BuyNowInfo)
+		}
+
 	}
 }
