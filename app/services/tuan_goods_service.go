@@ -12,7 +12,7 @@ type TuanGoodsService interface {
 	GetTuanGoodsByGoodsID(goodsID int) *structs.TuanGoods
 	GetTuanFoundByID(id int) *structs.TuanFound
 	GetTuanFollowCountByFoundID(foundID int) (int64, error)
-	ValidateCanJoinTuan(goodsID int, tuanID int, quantity int) error
+	ValidateCanJoinTuan(goodsID int, tuanID int, quantity int) (*structs.TuanGoods, error)
 }
 
 // tuanGoodsService 实现TuanGoodsService接口的结构体
@@ -44,15 +44,23 @@ func (s *tuanGoodsService) GetTuanFollowCountByFoundID(foundID int) (int64, erro
 }
 
 // ValidateCanJoinTuan 验证是否可平团
-func (s *tuanGoodsService) ValidateCanJoinTuan(goodsID int, tuanID int, quantity int) error {
+func (s *tuanGoodsService) ValidateCanJoinTuan(goodsID int, tuanID int, quantity int) (*structs.TuanGoods, error) {
 	// 参数验证
 	if goodsID <= 0 {
-		return errors.New("商品ID无效")
+		return nil, errors.New("商品ID无效")
 	}
 	if tuanID <= 0 {
-		return errors.New("团购ID无效")
+		return nil, errors.New("团购ID无效")
+	}
+	if quantity <= 0 {
+		return nil, errors.New("购买数量无效")
 	}
 
 	// 调用model层的验证方法
-	return models.ValidateCanJoinTuan(goodsID, tuanID, quantity)
+	tuanGoods, err := models.ValidateCanJoinTuan(int64(goodsID), int64(tuanID), int64(quantity))
+	if err != nil {
+		return nil, err
+	}
+
+	return tuanGoods, nil
 }

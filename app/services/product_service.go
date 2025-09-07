@@ -1,7 +1,6 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"myapi/app/models"
@@ -57,13 +56,11 @@ func (s *productService) DeleteProduct(id int) error {
 // GetBuyNowInfo 获取立即购买信息
 func (s *productService) GetBuyNowInfo(params map[string]interface{}) (*structs.BuyNowInfoData, error) {
 	// 参数验证
-	goodsID, ok := params["GoodsID"].(int)
-	if !ok || goodsID <= 0 {
-		return nil, errors.New("商品ID无效")
-	}
+	var goodsID = params["GoodsID"]
 
 	// 构建查询参数
 	cartParams := make(map[string]interface{})
+	cartParams["GoodsID"] = goodsID
 	cartParams["id"] = goodsID
 	cartParams["sku"] = params["Sku"]
 	cartParams["quantity"] = params["BuyNumber"]

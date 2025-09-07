@@ -20,6 +20,7 @@ func ValidateRequest(c *gin.Context, data interface{}) bool {
 	// 1. 首先进行基础的ShouldBind验证（处理binding标签规则）
 	if err := c.ShouldBind(data); err != nil {
 		msg := ParseValidationError(err.Error())
+		log.Printf("请求参数验证失败: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": msg})
 		return false
 	}

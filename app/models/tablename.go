@@ -33,6 +33,7 @@ var (
 	usersRelationTableName          string
 	uuidRelationTableName           string
 	operatingcityIncomelogTableName string
+	tuanGoodsSkuValueTableName      string
 )
 
 // init函数在包初始化时执行，配置表前缀
@@ -51,11 +52,11 @@ func init() {
 	miaoshaGoodsTableName = tablePrefix + "miaosha_goods"
 	tuanGoodsTableName = tablePrefix + "tuan_goods"
 	MiaoshaGoodsSkuValueTableName = tablePrefix + "miaosha_goods_sku_value"
-	TuanGoodsSkuValueTableName = tablePrefix + "tuan_goods_sku_value"
 
 	// 团购相关表
 	tuanFoundTableName = tablePrefix + "tuan_found"
 	tuanFollowTableName = tablePrefix + "tuan_follow"
+	tuanGoodsSkuValueTableName = tablePrefix + "tuan_goods_sku_value"
 
 	// 其他表
 	adTableName = tablePrefix + "ad"
