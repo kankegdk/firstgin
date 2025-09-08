@@ -1,0 +1,16 @@
+# 只为 GitHub 设置 HTTP 和 HTTPS 代理
+git config --global http.https://github.com.proxy socks5://127.0.0.1:7890
+git config --global https.https://github.com.proxy socks5://127.0.0.1:7890
+
+#MySQL查询定位距离
+经纬度计算距离，ST_Distance_Sphere 要mysql5.7+
+SELECT 
+    title,
+    latitude,
+    longitude,
+    status,
+    ROUND(ST_Distance_Sphere(
+        POINT(108.43942973326197, 31.181331430525347),
+        POINT(longitude, latitude)
+    )) AS distance_meters
+FROM ims_store;

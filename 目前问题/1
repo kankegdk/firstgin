@@ -1,15 +1,3 @@
 现在路由最后的反斜线问题，不想一个方法注册2个路由，像通过中间件解决
 
 
-经纬度计算距离，ST_Distance_Sphere 要mysql5.7+
-SELECT 
-    title,
-    latitude,
-    longitude,
-    status,
-    ROUND(ST_Distance_Sphere(
-        POINT(108.43942973326197, 31.181331430525347),
-        POINT(longitude, latitude)
-    )) AS distance_meters
-FROM ims_store;
-
