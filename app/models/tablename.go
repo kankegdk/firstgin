@@ -10,6 +10,7 @@ var (
 	goodsTableName                string
 	goodsBuynowinfoTableName      string
 	goodsSkuTableName             string
+	goodsSkuValueTableName        string
 	goodsImageTableName           string
 	goodsDescriptionTableName     string
 	goodsDiscountTableName        string
@@ -45,6 +46,7 @@ func init() {
 	goodsTableName = tablePrefix + "goods"
 	goodsBuynowinfoTableName = tablePrefix + "goods_buynowinfo"
 	goodsSkuTableName = tablePrefix + "goods_sku"
+	goodsSkuValueTableName = tablePrefix + "goods_sku_value"
 	goodsImageTableName = tablePrefix + "goods_image"
 	goodsDescriptionTableName = tablePrefix + "goods_description"
 	goodsDiscountTableName = tablePrefix + "goods_discount"

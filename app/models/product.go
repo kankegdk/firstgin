@@ -3,8 +3,11 @@ package models
 import (
 	"errors"
 	"log"
+	"math"
+	"myapi/app/helper"
 	"myapi/app/storage"
 	"myapi/app/structs"
+	"strings"
 	"time"
 )
 
@@ -122,6 +125,10 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 		log.Printf("未找到ID为%d的商品信息，直接返回错误", params["GoodsID"])
 		return nil, errors.New("未找到商品信息")
 	}
+
+	var tuanid = params["tuanid"].(int64)
+	var msid = params["msid"].(int64)
+
 	// 安全地进行类型断言
 	skuStr, ok := sku.(string)
 	if !ok && sku != nil {
@@ -131,10 +138,31 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 
 	// log.Printf("确认商品信息存在，准备处理各种活动信息")
 	extraData["quantity"] = params["quantity"]
+	//如果没有团购，秒杀，但是又sku
+	if skuStr != "" && (tuanid == 0 && msid == 0) {
+		// 检查SKU是否存在
+		var SkuValueresult structs.GoodsSkuValue
+		var query = gormDB.Table(goodsSkuValueTableName).
+			Where("goods_id = ? ", params["GoodsID"])
+		// 分割sku字符串并添加条件
+		skuValues := strings.Split(skuStr, ",")
+		for _, vo := range skuValues {
+			if vo != "" {
+				query = query.Where("FIND_IN_SET(?, sku)", vo)
+			}
+		}
+
+		result := query.First(&SkuValueresult)
+		//如果有就替换价格
+		if result.Error == nil {
+			extraData["price"] = SkuValueresult.Price
+			extraData["skuvid"] = SkuValueresult.ID
+			log.Println("SKU存在，价格:", SkuValueresult.Price)
+		}
+	}
 	log.Println("团购价格处理前的价格: ,", extraData["price"], "数量:", extraData["quantity"])
 
 	// 处理团购信息
-	var tuanid = params["tuanid"].(int64)
 	if tuanid > 0 {
 		// 正确传递字符串给可变参数函数
 		tuanGoods, err := ValidateCanJoinTuan(params["GoodsID"].(int64), int64(tuanid), params["quantity"].(int64), skuStr)
@@ -143,6 +171,7 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 			return nil, err
 		}
 		extraData["price"] = tuanGoods.Price
+		extraData["tuanid"] = tuanid
 		log.Println("团购价格处理后的价格: ", extraData["price"])
 		//如果是团购就返回团购相关信息
 		return extraData, nil
@@ -150,8 +179,7 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 		log.Println("未提供有效的团购ID参数，跳过团购信息处理")
 	}
 
-	log.Printf("秒杀ID参数:%T,%v", params["msid"], params["msid"])
-
+	//如果有秒杀
 	if params["msid"].(int64) > 0 {
 		// 验证是否可以购买秒杀商品
 		miaoshaGoods, err := ValidateCanBuyMiaosha(params["GoodsID"].(int64), params["msid"].(int64), params["quantity"].(int64), skuStr)
@@ -170,220 +198,82 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 		log.Println("未提供有效的秒杀ID参数，跳过秒杀信息处理")
 	}
 
+	//折扣价格处理
+	var discounts []structs.GoodsDiscount
+	discountResult := gormDB.Table(goodsDiscountTableName).
+		Where("goods_id = ? AND quantity <= ?", params["GoodsID"], extraData["quantity"]).
+		Order("quantity DESC, price ASC").
+		Find(&discounts)
+	if discountResult.Error != nil {
+		log.Printf("查询数量折扣失败: %v", discountResult.Error)
+	} else {
+		if len(discounts) > 0 {
+			// 假设price字段存储的是百分比，例如95表示95%折扣
+			originalPrice, _ := helper.ToFloat64(extraData["price"]) // 显式转换为float64类型
+
+			extraData["price"] = math.Round(originalPrice*discounts[0].Price/100*100) / 100
+
+			log.Printf("应用数量折扣成功: 原价%.2f，折扣率%.2f，折后价%.2f", originalPrice, discounts[0].Price, extraData["price"].(float64))
+		} else {
+			log.Printf("未找到适用的数量折扣，保持原价")
+		}
+	}
+
+	// 安全检查Points字段
+	pointsValue, pointsExists := extraData["points"]
+	if pointsExists && pointsValue != nil {
+		log.Printf("检测到积分字段，当前值: %v", pointsValue)
+		if p, ok := pointsValue.(int); ok && p < 0 {
+			extraData["Points"] = 0
+			log.Printf("积分值为负数(%d)，已纠正为0", p)
+		} else if p, ok := pointsValue.(float64); ok && p < 0 {
+			extraData["Points"] = 0
+			log.Printf("积分值为负数(%.2f)，已纠正为0", p)
+		} else {
+			log.Printf("积分值有效，无需纠正")
+		}
+	} else {
+		log.Println("积分字段不存在或为空，跳过安全检查")
+	}
+
+	// 计算总价并添加到extraData中
+	price, _ := helper.ToFloat64(extraData["price"])
+	quantity, _ := helper.ToFloat64(extraData["quantity"])
+	extraData["totalprice"] = price * quantity
+	log.Printf("计算商品总价: 单价%.2f * 数量%.2f = %.2f", price, quantity, extraData["totalprice"].(float64))
+
+	// 安全获取PayPoints
+	log.Printf("开始计算支付积分%v", extraData)
+	if payPointsValue, ok := extraData["pay_points"]; ok && payPointsValue != nil {
+		log.Printf("尝试获取支付积分值: %v", payPointsValue)
+		p, _ := helper.ToFloat64(payPointsValue)
+		totalPayPoints := p * quantity
+		extraData["PayPoints"] = totalPayPoints
+		log.Printf("支付积分为int类型，计算总支付积分: %.2f * %.2f = %.2f", p, quantity, totalPayPoints)
+
+	} else {
+		log.Println("支付积分字段不存在或为空，保持默认值")
+	}
+
+	// 安全获取PointsPrice
+	if pointsPriceValue, ok := extraData["points_price"]; ok && pointsPriceValue != nil {
+		log.Printf("尝试获取积分价格值: %v", pointsPriceValue)
+		p, _ := helper.ToFloat64(pointsPriceValue)
+		totalPointsPrice := p * quantity
+		extraData["PointsPrice"] = totalPointsPrice
+		log.Printf("积分价格为int类型，计算总积分价格: %.2f * %.2f = %.2f", p, quantity, totalPointsPrice)
+
+	} else {
+		log.Println("积分价格字段不存在或为空，保持默认值")
+	}
+
 	return nil, nil
 
 	/*
-		// 处理SKU信息
-		if sku, ok := params["sku"].(string); ok && sku != "" {
-			log.Printf("检测到SKU参数: %s，开始查询SKU详情", sku)
-			var goodsSkuValue structs.GoodsSkuValue
-			skuResult := gormDB.Table(goodsSkuTableName).
-				Where("goods_id = ? AND sku = ?", id, sku).
-				First(&goodsSkuValue)
-			if skuResult.Error == nil {
-				log.Printf("成功获取SKU信息，更新价格、库存和图片")
-				extraData["Price"] = goodsSkuValue.Price
-				extraData["quantity"] = goodsSkuValue.Quantity
-				if goodsSkuValue.Image != "" {
-					log.Printf("SKU有自定义图片，更新图片信息")
-					extraData["Image"] = goodsSkuValue.Image
-				} else {
-					log.Println("SKU没有自定义图片，保持原有图片")
-				}
-			} else {
-				log.Printf("查询SKU信息失败: %v，不更新SKU相关信息", skuResult.Error)
-			}
-		} else {
-			log.Println("未提供有效的SKU参数，跳过SKU详情处理")
-		}
-
-		// 处理多SKU信息
-		if isSkumore, ok := params["is_skumore"]; ok {
-			log.Printf("检测到多SKU标记: %v，添加到返回结果", isSkumore)
-			extraData["is_skumore"] = isSkumore
-		} else {
-			log.Println("未提供多SKU标记，跳过")
-		}
-		if skumore, ok := params["skumore"]; ok {
-			log.Printf("检测到多SKU详情数据，添加到返回结果")
-			extraData["skumore"] = skumore
-		} else {
-			log.Println("未提供多SKU详情数据，跳过")
-		}
-
-		log.Println("开始处理商品价格和库存信息，初始化相关变量")
-
-		// 安全地获取数量字段
-		if quantityValue, ok := extraData["quantity"]; ok && quantityValue != nil {
-			log.Printf("尝试获取数量字段值: %v", quantityValue)
-			if q, ok := quantityValue.(int); ok {
-				stores = q
-				stock = q
-				log.Printf("数量字段为int类型，库存设置为: %d", stores)
-			} else if q, ok := quantityValue.(float64); ok {
-				stores = int(q)
-				stock = int(q)
-				log.Printf("数量字段为float64类型，转换为int后库存设置为: %d", stores)
-			} else {
-				log.Printf("数量字段类型不支持，保持默认值: %d", stores)
-			}
-		} else {
-			log.Println("数量字段不存在或为空，保持默认值")
-		}
-		skumorequantity := 0
-		log.Printf("库存信息处理完成，当前库存: %d", stores)
-
-
-		// 处理多SKU情况
-		if isSkumoreParam, ok := params["is_skumore"]; ok && isSkumoreParam != "" {
-		// 应用数量折扣
-
-		var discounts []structs.GoodsDiscount
-
-		discountResult := gormDB.Table(goodsDiscountTableName).
-			Where("goods_id = ? AND quantity >= ?", id, extraData["quantity"]).
-			Order("quantity DESC, price ASC").
-			Find(&discounts)
-		if discountResult.Error != nil {
-			log.Printf("查询数量折扣失败: %v", discountResult.Error)
-		} else {
-			if len(discounts) > 0 {
-				// 假设price字段存储的是百分比，例如95表示95%折扣
-				originalPrice := price
-				price = math.Round(price*discounts[0].Price*10) / 100
-				log.Printf("应用数量折扣成功: 原价%.2f，折扣率%.2f，折后价%.2f", originalPrice, discounts[0].Price, price)
-			} else {
-				log.Printf("未找到适用的数量折扣，保持原价")
-			}
-		}
-
-		// 处理积分相关字段 - 安全检查
-		log.Println("开始处理积分相关字段安全检查")
-		pointsValue, pointsExists := extraData["Points"]
-		if pointsExists && pointsValue != nil {
-			log.Printf("检测到积分字段，当前值: %v", pointsValue)
-			if p, ok := pointsValue.(int); ok && p < 0 {
-				extraData["Points"] = 0
-				log.Printf("积分值为负数(%d)，已纠正为0", p)
-			} else if p, ok := pointsValue.(float64); ok && p < 0 {
-				extraData["Points"] = 0
-				log.Printf("积分值为负数(%.2f)，已纠正为0", p)
-			} else {
-				log.Printf("积分值有效，无需纠正")
-			}
-		} else {
-			log.Println("积分字段不存在或为空，跳过安全检查")
-		}
-
-		// 设置商品基本信息
-		log.Println("设置商品基本信息到返回结果")
-		extraData["GoodsID"] = id
-		extraData["Quantity"] = extraData["quantity"]
-		extraData["Price"] = price
-		log.Printf("商品基本信息已设置: ID=%d，数量=%d，价格=%.2f", id, extraData["quantity"], price)
-
-		// 计算总价 - 安全获取字段值
-		quantity := 0.0
-		quantityInt := 0
-		if q, ok := extraData["quantity"].(float64); ok {
-			quantity = q
-			quantityInt = int(q)
-		} else if q, ok := extraData["quantity"].(int); ok {
-			quantity = float64(q)
-			quantityInt = q
-		} else {
-			log.Printf("警告: quantity字段类型未知(%T)，使用默认值0", extraData["quantity"])
-		}
 		total := price * quantity
 		totalPayPoints := 0
 		totalPointsPrice := 0
 		log.Printf("计算商品总价: 单价%.2f * 数量%d = %.2f", price, quantityInt, total)
-
-		// 安全获取PayPoints
-		if payPointsValue, ok := extraData["PayPoints"]; ok && payPointsValue != nil {
-			log.Printf("尝试获取支付积分值: %v", payPointsValue)
-			if pp, ok := payPointsValue.(int); ok {
-				totalPayPoints = pp * quantityInt
-				log.Printf("支付积分为int类型，计算总支付积分: %d * %d = %d", pp, quantityInt, totalPayPoints)
-			} else if pp, ok := payPointsValue.(float64); ok {
-				totalPayPoints = int(pp) * quantityInt
-				log.Printf("支付积分为float64类型，计算总支付积分: %d * %d = %d", int(pp), quantityInt, totalPayPoints)
-			} else {
-				log.Printf("支付积分类型不支持，保持默认值: %d", totalPayPoints)
-			}
-		} else {
-			log.Println("支付积分字段不存在或为空，保持默认值")
-		}
-
-		// 安全获取PointsPrice
-		if pointsPriceValue, ok := extraData["PointsPrice"]; ok && pointsPriceValue != nil {
-			log.Printf("尝试获取积分价格值: %v", pointsPriceValue)
-			if pp, ok := pointsPriceValue.(int); ok {
-				totalPointsPrice = pp * extraData["quantity"].(int)
-				log.Printf("积分价格为int类型，计算总积分价格: %d * %d = %d", pp, extraData["quantity"].(int), totalPointsPrice)
-			} else if pp, ok := pointsPriceValue.(float64); ok {
-				totalPointsPrice = int(pp) * extraData["quantity"].(int)
-				log.Printf("积分价格为float64类型，计算总积分价格: %d * %d = %d", int(pp), extraData["quantity"].(int), totalPointsPrice)
-			} else {
-				log.Printf("积分价格类型不支持，保持默认值: %d", totalPointsPrice)
-			}
-		} else {
-			log.Println("积分价格字段不存在或为空，保持默认值")
-		}
-
-		// 计算返积分 - 安全获取字段值
-		var totalReturnPoints float64
-		pointsValue = extraData["Points"]
-		log.Printf("开始计算返积分")
-		if pointsValue != nil {
-			var points int
-			log.Printf("尝试获取积分值: %v", pointsValue)
-			if pInt, ok := pointsValue.(int); ok {
-				points = pInt
-				log.Printf("积分值为int类型，值为: %d", points)
-			} else if pFloat, ok := pointsValue.(float64); ok {
-				points = int(pFloat)
-				log.Printf("积分值为float64类型，转换为int后的值为: %d", points)
-			} else {
-				log.Printf("积分值类型不支持，保持默认值: %d", points)
-				return extraData, nil
-			}
-
-			if points > 0 {
-				log.Printf("积分值大于0，准备计算返积分")
-				// 安全获取PointsMethod
-				pointsMethod := 0
-				if methodValue, ok := extraData["PointsMethod"]; ok && methodValue != nil {
-					log.Printf("尝试获取积分方法值: %v", methodValue)
-					if mInt, ok := methodValue.(int); ok {
-						pointsMethod = mInt
-						log.Printf("积分方法为int类型，值为: %d", pointsMethod)
-					} else if mFloat, ok := methodValue.(float64); ok {
-						pointsMethod = int(mFloat)
-						log.Printf("积分方法为float64类型，转换为int后的值为: %d", pointsMethod)
-					} else {
-						log.Printf("积分方法类型不支持，保持默认值: %d", pointsMethod)
-					}
-				} else {
-					log.Println("积分方法字段不存在或为空，保持默认值")
-				}
-
-				if pointsMethod == 1 {
-					log.Printf("积分方法为按数量计算，每件商品返%d积分", points)
-					totalReturnPoints = float64(points * extraData["quantity"].(int))
-					log.Printf("按数量计算返积分: %d * %d = %.2f", points, extraData["quantity"].(int), totalReturnPoints)
-				} else {
-					log.Printf("积分方法为按金额比例计算，比例为%d%%", points)
-					// 假设points字段存储的是百分比
-					totalReturnPoints = total * (float64(points) / 100)
-					log.Printf("按金额比例计算返积分: %.2f * %d%% = %.2f", total, points, totalReturnPoints)
-				}
-			} else {
-				log.Printf("积分值为0或负数，不计算返积分")
-			}
-		} else {
-			log.Println("积分值为nil，不计算返积分")
-		}
 
 		// 更新商品重量 - 安全获取字段值
 		if weightValue, ok := extraData["Weight"]; ok && weightValue != nil {

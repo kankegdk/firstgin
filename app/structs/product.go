@@ -90,7 +90,7 @@ type GoodsBuynowinfo struct {
 	Ip         string `gorm:"column:ip" json:"ip"`
 	Data       string `gorm:"column:data" json:"data"`
 	ExpireTime int64  `gorm:"column:expire_time" json:"expire_time"` // 使用int64以匹配time.Now().Unix()的返回类型
-	Status     int    `gorm:"column:status" json:"status"` // 状态
+	Status     int    `gorm:"column:status" json:"status"`           // 状态
 }
 
 // GoodsImage 商品图片表
@@ -121,28 +121,28 @@ type GoodsDiscount struct {
 
 // Category 商品分类表，对应ims_xm_mallv3_category表
 type Category struct {
-	ID             int    `gorm:"column:id;primaryKey;autoIncrement;unsigned" json:"id"` // ID
-	Weid           int    `gorm:"column:weid" json:"weid"`
-	Pid            int    `gorm:"column:pid;index" json:"pid"` // 上级分类ID
-	Title          string `gorm:"column:title" json:"title"` // 标题
-	Goodsnum       int    `gorm:"column:goodsnum" json:"goodsnum"` // 商品数量
-	IsBinding      int    `gorm:"column:is_binding" json:"is_binding"` // 选定师傅才能下单
-	IsOrdercount   int    `gorm:"column:is_ordercount" json:"is_ordercount"` // 是否统计订单
+	ID                int    `gorm:"column:id;primaryKey;autoIncrement;unsigned" json:"id"` // ID
+	Weid              int    `gorm:"column:weid" json:"weid"`
+	Pid               int    `gorm:"column:pid;index" json:"pid"`                         // 上级分类ID
+	Title             string `gorm:"column:title" json:"title"`                           // 标题
+	Goodsnum          int    `gorm:"column:goodsnum" json:"goodsnum"`                     // 商品数量
+	IsBinding         int    `gorm:"column:is_binding" json:"is_binding"`                 // 选定师傅才能下单
+	IsOrdercount      int    `gorm:"column:is_ordercount" json:"is_ordercount"`           // 是否统计订单
 	IsStoragelocation int    `gorm:"column:is_storagelocation" json:"is_storagelocation"` // 是否用存放位置
-	Ptype          int    `gorm:"column:ptype" json:"ptype"` // 类型
-	ServicetimePtype int    `gorm:"column:servicetime_ptype" json:"servicetime_ptype"`
-	Deliverymode   string `gorm:"column:deliverymode" json:"deliverymode"` // 交付方式
-	SubmitOrderTxt string `gorm:"column:submit_order_txt" json:"submit_order_txt"` // 下单按钮文字
-	Ordergoodsremark string `gorm:"column:ordergoodsremark" json:"ordergoodsremark"`
-	Order1remark   string `gorm:"column:order1remark" json:"order1remark"`
-	Image          string `gorm:"column:image" json:"image"`
-	MetaKeyword    string `gorm:"column:meta_keyword" json:"meta_keyword"`
-	MetaDescription string `gorm:"column:meta_description" json:"meta_description"`
-	Sort           int    `gorm:"column:sort" json:"sort"`
-	CreateTime     int    `gorm:"column:create_time" json:"create_time"`
-	UpdateTime     int    `gorm:"column:update_time" json:"update_time"`
-	Status         int    `gorm:"column:status" json:"status"`
-	IsShowHome     int    `gorm:"column:is_show_home" json:"is_show_home"` // 是否在首页展示：0-不展示 1-展示
+	Ptype             int    `gorm:"column:ptype" json:"ptype"`                           // 类型
+	ServicetimePtype  int    `gorm:"column:servicetime_ptype" json:"servicetime_ptype"`
+	Deliverymode      string `gorm:"column:deliverymode" json:"deliverymode"`         // 交付方式
+	SubmitOrderTxt    string `gorm:"column:submit_order_txt" json:"submit_order_txt"` // 下单按钮文字
+	Ordergoodsremark  string `gorm:"column:ordergoodsremark" json:"ordergoodsremark"`
+	Order1remark      string `gorm:"column:order1remark" json:"order1remark"`
+	Image             string `gorm:"column:image" json:"image"`
+	MetaKeyword       string `gorm:"column:meta_keyword" json:"meta_keyword"`
+	MetaDescription   string `gorm:"column:meta_description" json:"meta_description"`
+	Sort              int    `gorm:"column:sort" json:"sort"`
+	CreateTime        int    `gorm:"column:create_time" json:"create_time"`
+	UpdateTime        int    `gorm:"column:update_time" json:"update_time"`
+	Status            int    `gorm:"column:status" json:"status"`
+	IsShowHome        int    `gorm:"column:is_show_home" json:"is_show_home"` // 是否在首页展示：0-不展示 1-展示
 }
 
 // GoodsAttribute 商品属性表，对应ims_goods_attribute表
@@ -176,7 +176,7 @@ type BuyNowInfoParams struct {
 
 // BuyNowInfoData 立即购买返回数据
 type BuyNowInfoData struct {
-	*Product // 使用指针类型，与代码中的使用一致
+	*Product                        // 使用指针类型，与代码中的使用一致
 	IsCombination     string        `json:"is_combination"`
 	Pic               string        `json:"pic"`
 	GoodsLength       int           `json:"goodslength"`
@@ -187,7 +187,7 @@ type BuyNowInfoData struct {
 	Deliverymodearray []interface{} `json:"deliverymodearray"`
 	Buynowinfoid      int           `json:"buynowinfoid"`
 	ShippingType      string        `json:"shipping_type"` // 配送方式
-	RecordId          int           `json:"record_id"` // 立即购买记录ID
+	RecordId          int           `json:"record_id"`     // 立即购买记录ID
 }
 
 // GoodsCombination 商品套装组合表，对应ims_goods_combination表
@@ -317,7 +317,7 @@ type GoodsSkuValue struct {
 	Sku      string  `gorm:"column:sku" json:"sku"`
 	Image    string  `gorm:"column:image" json:"image"`
 	Quantity int     `gorm:"column:quantity" json:"quantity"`
-	Price    float64 `gorm:"column:price;type:decimal(15,2)" json:"price"`
+	Price    float64 `gorm:"column:price;" json:"price"`
 }
 
 // GoodsTimeDiscount 时间段价格表，对应ims_goods_time_discount表

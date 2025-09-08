@@ -1426,3 +1426,95 @@ func PassHash(passwordInput, salt string) string {
 	// 将哈希结果转换为十六进制字符串
 	return hex.EncodeToString(sha1Hash.Sum(nil))
 }
+func ToFloat64(value interface{}) (float64, error) {
+	switch v := value.(type) {
+	case float64:
+		return v, nil
+	case float32:
+		return float64(v), nil
+	case int:
+		return float64(v), nil
+	case int32:
+		return float64(v), nil
+	case int64:
+		return float64(v), nil
+	case uint:
+		return float64(v), nil
+	case uint32:
+		return float64(v), nil
+	case uint64:
+		return float64(v), nil
+		// 处理字符串类型
+	case string:
+		return strconv.ParseFloat(v, 64)
+	case nil:
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("无法转换类型 %T 到 float64", v)
+	}
+}
+
+// ToStr 将任意类型转换为string
+func ToStr(value interface{}) (string, error) {
+	switch v := value.(type) {
+	case string:
+		return v, nil
+	case float64:
+		return strconv.FormatFloat(v, 'f', -1, 64), nil
+	case float32:
+		return strconv.FormatFloat(float64(v), 'f', -1, 32), nil
+	case int:
+		return strconv.Itoa(v), nil
+	case int32:
+		return strconv.Itoa(int(v)), nil
+	case int64:
+		return strconv.FormatInt(v, 10), nil
+	case uint:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint32:
+		return strconv.FormatUint(uint64(v), 10), nil
+	case uint64:
+		return strconv.FormatUint(v, 10), nil
+	case bool:
+		return strconv.FormatBool(v), nil
+	case nil:
+		return "", nil
+	default:
+		return fmt.Sprintf("%v", v), nil
+	}
+}
+
+// ToInt 将任意类型转换为int
+func ToInt(value interface{}) (int, error) {
+	switch v := value.(type) {
+	case int:
+		return v, nil
+	case int32:
+		return int(v), nil
+	case int64:
+		return int(v), nil
+	case uint:
+		return int(v), nil
+	case uint32:
+		return int(v), nil
+	case uint64:
+		return int(v), nil
+	case float64:
+		return int(v), nil
+	case float32:
+		return int(v), nil
+	case string:
+		return strconv.Atoi(v)
+	case bool:
+		if v {
+			return 1, nil
+		} else {
+			return 0, nil
+		}
+	case nil:
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("无法转换类型 %T 到 int", v)
+	}
+}
+
