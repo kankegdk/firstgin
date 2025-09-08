@@ -89,7 +89,7 @@ type GoodsBuynowinfo struct {
 	Weid       int    `gorm:"column:weid" json:"weid"`
 	Ip         string `gorm:"column:ip" json:"ip"`
 	Data       string `gorm:"column:data" json:"data"`
-	ExpireTime int64  `gorm:"column:expire_time" json:"expire_time"` // 使用int64以匹配time.Now().Unix()的返回类型
+	ExpireTime int    `gorm:"column:expire_time" json:"expire_time"` // 改为int以匹配数据表结构
 	Status     int    `gorm:"column:status" json:"status"`           // 状态
 }
 
@@ -172,22 +172,6 @@ type BuyNowInfoParams struct {
 	BuyNumber  string `json:"buyNumber"`
 	Weid       int    `json:"weid"`
 	Ip         string `json:"ip"`
-}
-
-// BuyNowInfoData 立即购买返回数据
-type BuyNowInfoData struct {
-	*Product                        // 使用指针类型，与代码中的使用一致
-	IsCombination     string        `json:"is_combination"`
-	Pic               string        `json:"pic"`
-	GoodsLength       int           `json:"goodslength"`
-	Jointuanid        string        `json:"jointuanid"`
-	Miaosha           interface{}   `json:"miaosha"`
-	Category          *Category     `json:"category"` // 使用指针类型，避免空结构体
-	Deliverymode      string        `json:"deliverymode"`
-	Deliverymodearray []interface{} `json:"deliverymodearray"`
-	Buynowinfoid      int           `json:"buynowinfoid"`
-	ShippingType      string        `json:"shipping_type"` // 配送方式
-	RecordId          int           `json:"record_id"`     // 立即购买记录ID
 }
 
 // GoodsCombination 商品套装组合表，对应ims_goods_combination表

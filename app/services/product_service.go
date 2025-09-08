@@ -1,8 +1,11 @@
 package services
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"myapi/app/helper"
 	"myapi/app/models"
 	"myapi/app/structs"
 )
@@ -14,7 +17,7 @@ type ProductService interface {
 	CreateProduct(product *structs.Product) error
 	UpdateProduct(product *structs.Product) error
 	DeleteProduct(id int) error
-	GetBuyNowInfo(params map[string]interface{}) (*structs.BuyNowInfoData, error)
+	GetBuyNowInfo(params map[string]interface{}) (map[string]interface{}, error)
 }
 
 // productService 实现ProductService接口的结构体
@@ -54,7 +57,7 @@ func (s *productService) DeleteProduct(id int) error {
 }
 
 // GetBuyNowInfo 获取立即购买信息
-func (s *productService) GetBuyNowInfo(params map[string]interface{}) (*structs.BuyNowInfoData, error) {
+func (s *productService) GetBuyNowInfo(params map[string]interface{}) (map[string]interface{}, error) {
 	// 参数验证
 	var goodsID = params["GoodsID"]
 
@@ -73,57 +76,54 @@ func (s *productService) GetBuyNowInfo(params map[string]interface{}) (*structs.
 	cartParams["uid"] = params["Uid"]
 	// return nil, nil
 	// // 获取商品详情
-	e, err := models.CartGoods(cartParams)
-	log.Println("cart 产品", e)
+	product, err := models.CartGoods(cartParams)
+	log.Println("cart 产品", product)
 	if err != nil {
 		return nil, fmt.Errorf("获取商品信息失败: %v", err)
 	}
-	return nil, nil
-	// // 检查商品状态
-	// if product.Status != 1 {
-	// 	return nil, errors.New("商品已下架")
-	// }
+	status, _ := helper.ToInt(product["status"])
+	if status != 1 {
+		return nil, errors.New("商品已下架")
+	}
 
-	// // 处理积分商品
-	// if product.Points > 0 {
-	// 	// 在实际项目中，这里需要验证用户积分是否足够
-	// }
+	// 处理积分商品
+	if is_points_goods, err := helper.ToInt(product["is_points_goods"]); true || err == nil && is_points_goods == 1 {
+		// 在实际项目中，这里需要验证用户积分是否足够
+		points, _ := helper.ToInt(product["pay_points"])
+		uid, _ := helper.ToInt(params["Uid"])
+		if points > 0 {
+			// 验证用户积分是否足够
+			userPoints, err := models.GetUserPoints(uid)
 
-	// // 处理秒杀商品
-	// if msid, err := strconv.ParseInt(params.Msid, 10, 64); err == nil && msid > 0 {
-	// 	// 在实际项目中，这里需要验证秒杀活动是否有效
-	// }
+			log.Println("用户积分", userPoints, "需要积分：", points)
+			if err != nil {
+				return nil, fmt.Errorf("获取用户积分失败: %v", err)
+			}
+			if userPoints < points {
+				return nil, errors.New("积分不足")
+			}
+		}
+	}
 
-	// // 处理团购商品
-	// if tuanid, err := strconv.ParseInt(params.Tuanid, 10, 64); err == nil && tuanid > 0 {
-	// 	// 在实际项目中，这里需要验证团购活动是否有效
-	// }
+	infodata := make(map[string]interface{})
+	infodata["shopList"] = product
+	infodata["sid"] = product["sid"]
+	infodata["ptype"] = 1
 
-	// // 获取分类信息
-	// category, err := models.GetCategoryByID(product.CatID)
-	// if err != nil {
-	// 	// 分类信息不是必须的，可以继续处理
-	// }
+	// 转换为JSON字符串
+	dataJSON, err := json.Marshal(product)
+	if err != nil {
+		return nil, fmt.Errorf("转换为JSON字符串失败: %v", err)
+	}
 
-	// // 构建返回数据
-	// result := &structs.BuyNowInfoData{
-	// 	Product:  product,
-	// 	Category: category,
-	// 	// 默认配送方式为快递
-	// 	ShippingType: "express",
-	// }
+	// 记录购买信息
+	recordId, err := models.CreateGoodsBuynowinfo(params["Weid"].(int), params["Ip"].(string), string(dataJSON))
 
-	// // 转换为JSON字符串
-	// dataJSON, err := json.Marshal(params)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("转换为JSON字符串失败: %v", err)
-	// }
+	// 构建返回数据
 
-	// // 记录购买信息
-	// recordId, err := models.CreateGoodsBuynowinfo(params.Weid, params.Ip, string(dataJSON))
-	// if err == nil {
-	// 	result.RecordId = recordId
-	// }
+	if err == nil {
+		infodata["recordId"] = recordId
+	}
 
-	// return result, nil
+	return infodata, nil
 }

@@ -66,19 +66,19 @@ func BuyNowInfo(c *gin.Context) {
 		})
 		return
 	}
-	// 如果Uid=0 且 mid>0就要验证是否登录
-	if params["Uid"] == 0 && buyData.Msid > 0 {
-		// 验证登录，使用helper.CheckLogin函数
-		log.Printf("验证前id: %v", params["Uid"])
-		isLoggedIn, _, _ := helper.CheckLogin(c)
-		if !isLoggedIn {
-			c.JSON(http.StatusOK, gin.H{
-				"code": 1,
-				"msg":  "请先登录",
-			})
-			return
-		}
-	}
+	// 如果Uid=0 且 mid>0就要验证是否登录,必须先登录才能下单
+	// if params["Uid"] == 0 && buyData.Msid > 0 {
+	// 	// 验证登录，使用helper.CheckLogin函数
+	// 	log.Printf("验证前id: %v", params["Uid"])
+	// 	isLoggedIn, _, _ := helper.CheckLogin(c)
+	// 	if !isLoggedIn {
+	// 		c.JSON(http.StatusOK, gin.H{
+	// 			"code": 1,
+	// 			"msg":  "请先登录",
+	// 		})
+	// 		return
+	// 	}
+	// }
 	params["Uid"] = helper.UID(c)
 
 	log.Printf("验证后id: %v", params["Uid"])

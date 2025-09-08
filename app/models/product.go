@@ -85,7 +85,7 @@ func CreateGoodsBuynowinfo(weid int, ip string, data string) (int, error) {
 	buynowinfo := &structs.GoodsBuynowinfo{
 		Weid:       weid,
 		Ip:         ip,
-		ExpireTime: time.Now().Unix(),
+		ExpireTime: int(time.Now().Unix() + 3600),
 		Data:       data,
 		Status:     1,
 	}
@@ -262,80 +262,30 @@ func CartGoods(params map[string]interface{}) (map[string]interface{}, error) {
 		totalPointsPrice := p * quantity
 		extraData["PointsPrice"] = totalPointsPrice
 		log.Printf("积分价格为int类型，计算总积分价格: %.2f * %.2f = %.2f", p, quantity, totalPointsPrice)
-
 	} else {
 		log.Println("积分价格字段不存在或为空，保持默认值")
 	}
+	// 更新商品重量 - 安全获取字段值
+	if weightValue, ok := extraData["weight"]; ok && weightValue != nil {
+		log.Printf("尝试获取商品重量值: %v", weightValue)
+		w, _ := helper.ToFloat64(weightValue)
+		weightTotal := w * quantity
+		extraData["Weight"] = weightTotal
+		log.Printf("重量为float64类型，计算总重量: %.2f * %.2f = %.2f", w, quantity, weightTotal)
+	} else {
+		log.Println("重量字段不存在或为空，不更新重量信息")
+	}
+	// 设置额外数据
+	extraData["sku"] = sku
+	isPointsGoods, _ := helper.ToInt(extraData["is_points_goods"])
+	if isPointsGoods == 1 {
+		log.Println("该商品为积分商品，将总价和积分价格设置为0")
+		extraData["total"] = 0.0
+		extraData["totalPointsPrice"] = 0.0
+	} else {
+		log.Println("该商品不是积分商品，保持原价格设置")
+	}
 
-	return nil, nil
-
-	/*
-		total := price * quantity
-		totalPayPoints := 0
-		totalPointsPrice := 0
-		log.Printf("计算商品总价: 单价%.2f * 数量%d = %.2f", price, quantityInt, total)
-
-		// 更新商品重量 - 安全获取字段值
-		if weightValue, ok := extraData["Weight"]; ok && weightValue != nil {
-			log.Printf("尝试获取商品重量值: %v", weightValue)
-			if w, ok := weightValue.(float64); ok {
-				weightTotal := w * float64(extraData["quantity"].(int))
-				extraData["Weight"] = weightTotal
-				log.Printf("重量为float64类型，计算总重量: %.2f * %d = %.2f", w, extraData["quantity"].(int), weightTotal)
-			} else if w, ok := weightValue.(int); ok {
-				weightTotal := float64(w) * float64(extraData["quantity"].(int))
-				extraData["Weight"] = weightTotal
-				log.Printf("重量为int类型，计算总重量: %d * %d = %.2f", w, extraData["quantity"].(int), weightTotal)
-			} else {
-				log.Printf("重量类型不支持，不更新重量信息")
-			}
-		} else {
-			log.Println("重量字段不存在或为空，不更新重量信息")
-		}
-
-		// 设置额外数据
-		log.Println("设置商品额外数据到返回结果")
-		extraData["price"] = price
-		extraData["total"] = total
-		extraData["totalPayPoints"] = totalPayPoints
-		extraData["totalPointsPrice"] = totalPointsPrice
-		extraData["totalReturnPoints"] = totalReturnPoints
-		extraData["stock"] = stock
-		extraData["stores"] = stores
-		extraData["label"] = label
-		extraData["sku"] = sku
-		extraData["is_skumore"] = isSkumore
-		extraData["skumorequantity"] = skumorequantity
-
-		log.Printf("额外数据已设置: 总价=%.2f，总支付积分=%d，总积分价格=%d，总返积分=%.2f，库存=%d", total, totalPayPoints, totalPointsPrice, totalReturnPoints, stock)
-
-		// 处理积分商品 - 安全获取字段值
-		isPointsGoods := 0
-		log.Println("开始处理积分商品标记")
-		if isPointsValue, ok := extraData["IsPointsGoods"]; ok && isPointsValue != nil {
-			log.Printf("尝试获取积分商品标记值: %v", isPointsValue)
-			if ipg, ok := isPointsValue.(int); ok {
-				isPointsGoods = ipg
-				log.Printf("积分商品标记为int类型，值为: %d", isPointsGoods)
-			} else if ipg, ok := isPointsValue.(float64); ok {
-				isPointsGoods = int(ipg)
-				log.Printf("积分商品标记为float64类型，转换为int后的值为: %d", isPointsGoods)
-			} else {
-				log.Printf("积分商品标记类型不支持，保持默认值: %d", isPointsGoods)
-			}
-		} else {
-			log.Println("积分商品标记字段不存在或为空，保持默认值")
-		}
-
-		if isPointsGoods == 1 {
-			log.Println("该商品为积分商品，将总价和积分价格设置为0")
-			extraData["total"] = 0.0
-			extraData["totalPointsPrice"] = 0.0
-		} else {
-			log.Println("该商品不是积分商品，保持原价格设置")
-		}
-
-		log.Println("CartGoods函数执行完成，返回商品信息")
-		return extraData, nil
-	*/
+	log.Println("CartGoods函数执行完成，返回商品信息")
+	return extraData, nil
 }

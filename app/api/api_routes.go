@@ -37,6 +37,11 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 			addresses.GET("/default", controllers.GetDefaultAddress)     // 获取默认地址
 			addresses.GET("/list", controllers.GetAddressList)           // 获取地址列表
 		}
+		products := api.Group("/products")
+		{
+
+			products.POST("/buynowinfo", controllers.BuyNowInfo)
+		}
 	}
 
 	// 公共API路由组，不需要认证
@@ -62,7 +67,6 @@ func SetupAPIRoutes(r *gin.Engine, apiPrefix string) {
 		products := public.Group("/products")
 		{
 			products.GET("/", controllers.GetAllProducts)
-			products.POST("/buynowinfo", controllers.BuyNowInfo)
 		}
 
 	}

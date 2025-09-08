@@ -389,3 +389,22 @@ func GetMemberWithGroupInfo(member *structs.Member) (*structs.Member, error) {
 	// 由于没有看到会员组相关的模型，这里暂时返回原会员对象
 	return member, nil
 }
+func GetUserPoints(uid int) (int, error) {
+	gormDB := storage.GetGormDB()
+	if gormDB == nil {
+		return 0, errors.New("数据库连接失败")
+	}
+
+	var points int
+	result := gormDB.Table(memberTableName).
+		Select("points").
+		Where("id = ?", uid).
+		Pluck("points", &points)
+
+	if result.Error != nil {
+		log.Printf("查询用户积分失败: %v", result.Error)
+		return 0, result.Error
+	}
+
+	return points, nil
+}
